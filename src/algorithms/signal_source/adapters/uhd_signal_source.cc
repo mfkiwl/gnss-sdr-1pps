@@ -21,6 +21,7 @@
 #include "GPS_L1_CA.h"
 #include "configuration_interface.h"
 #include "gnss_sdr_valve.h"
+#include "spoofing_detection.h"
 #include <glog/logging.h>
 #include <uhd/exception.hpp>
 #include <uhd/types/device_addr.hpp>
@@ -28,6 +29,7 @@
 #include <iostream>
 #include <utility>
 
+#pragma message("Spoofing Detection")
 
 UhdSignalSource::UhdSignalSource(ConfigurationInterface* configuration,
     const std::string& role, unsigned int in_stream, unsigned int out_stream,
@@ -55,9 +57,16 @@ UhdSignalSource::UhdSignalSource(ConfigurationInterface* configuration,
         {
             dev_addr["serial"] = device_serial;
         }
-    subdevice_ = configuration->property(role + ".subdevice", empty);
     clock_source_ = configuration->property(role + ".clock_source", std::string("internal"));
     RF_channels_ = configuration->property(role + ".RF_channels", 1);
+    spoofing_protection_  = configuration->property(role + ".spoofing_protection", 0);
+    if (spoofing_protection_ !=0) 
+         {printf("Spoofing: %d\n",spoofing_protection_);
+          RF_channels_=spoofing_protection_; // Spoofing: override RF_channels in this block only => N inputs and RF_chan=1 output
+          subdevice_ = configuration->property(role + ".subdevice", std::string("A:A A:B"));
+         }
+    else 
+          subdevice_ = configuration->property(role + ".subdevice", empty); 
     sample_rate_ = configuration->property(role + ".sampling_frequency", 4.0e6);
     item_type_ = configuration->property(role + ".item_type", default_item_type);
 
@@ -74,8 +83,7 @@ UhdSignalSource::UhdSignalSource(ConfigurationInterface* configuration,
             IF_bandwidth_hz_.push_back(configuration->property(role + ".IF_bandwidth_hz", sample_rate_ / 2));
         }
     else
-        {
-            // multiple RF channels selected
+        {   // multiple RF channels selected
             for (int i = 0; i < RF_channels_; i++)
                 {
                     // Single RF channel UHD operation (backward compatible config file format)
@@ -215,6 +223,11 @@ UhdSignalSource::UhdSignalSource(ConfigurationInterface* configuration,
                     DLOG(INFO) << "file_sink(" << file_sink_.at(i)->unique_id() << ")";
                 }
         }
+    if (spoofing_protection_ != 0)  // if spoofing_protection is on
+        {
+            spoofing_detect_=gnss_sdr_make_spoof(item_size_, queue_);
+            printf("Spoofing make_block: %d\n",spoofing_protection_);fflush(stdout);
+        }
     if (in_stream_ > 0)
         {
             LOG(ERROR) << "A signal source does not have an input stream";
@@ -228,7 +241,7 @@ UhdSignalSource::UhdSignalSource(ConfigurationInterface* configuration,
 
 void UhdSignalSource::connect(gr::top_block_sptr top_block)
 {
-    for (int i = 0; i < RF_channels_; i++)
+   for (int i = 0; i < RF_channels_; i++)
         {
             if (samples_.at(i) != 0ULL)
                 {
@@ -247,6 +260,11 @@ void UhdSignalSource::connect(gr::top_block_sptr top_block)
                             top_block->connect(uhd_source_, i, file_sink_.at(i), 0);
                             DLOG(INFO) << "connected usrp source to file sink RF Channel " << i;
                         }
+                }
+            if (spoofing_protection_ != 0)
+                {
+                    top_block->connect(uhd_source_, i, spoofing_detect_, i);
+                    printf("UHD -> Spoofing connect: %d\n",i);fflush(stdout);
                 }
         }
 }
@@ -296,6 +314,10 @@ gr::basic_block_sptr UhdSignalSource::get_right_block(int RF_channel)
     if (samples_.at(RF_channel) != 0ULL)
         {
             return valve_.at(RF_channel);
+        }
+    if ( spoofing_protection_ != 0ULL)
+        {
+            return spoofing_detect_;
         }
     return uhd_source_;
 }

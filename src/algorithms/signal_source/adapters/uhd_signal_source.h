@@ -82,6 +82,7 @@ private:
     std::string device_address_;
     double sample_rate_;
     int RF_channels_;
+    int spoofing_protection_;
     std::string item_type_;
     size_t item_size_;
 
@@ -96,6 +97,7 @@ private:
     std::vector<std::string> dump_filename_;
 
     std::vector<boost::shared_ptr<gr::block>> valve_;
+    boost::shared_ptr<gr::block> spoofing_detect_;
     std::vector<gr::blocks::file_sink::sptr> file_sink_;
 
     std::shared_ptr<Concurrent_Queue<pmt::pmt_t>> queue_;

@@ -102,6 +102,7 @@ private:
     uint64_t samples_;
     int64_t sampling_frequency_;
     std::string filename_;
+    std::string filename2_;
     std::string item_type_;
     bool repeat_;
     bool dump_;
@@ -109,8 +110,11 @@ private:
     std::string role_;
     uint32_t in_streams_;
     uint32_t out_streams_;
+    int spoofing_protection_;
     gr::blocks::file_source::sptr file_source_;
-    boost::shared_ptr<gr::block> valve_;
+    gr::blocks::file_source::sptr file_source2_;
+    boost::shared_ptr<gr::block> valve_,valve2_;
+    boost::shared_ptr<gr::block> spoofing_detect_;
     gr::blocks::file_sink::sptr sink_;
     gr::blocks::throttle::sptr throttle_;
     std::shared_ptr<Concurrent_Queue<pmt::pmt_t>> queue_;
