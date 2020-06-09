@@ -63,6 +63,16 @@ Position at 2019-Nov-26 07:58:00.500000 UTC using 4 observations is Lat = 47.254
 Velocity: East: -0.045 [m/s], North: 0.182 [m/s], Up = 0.434 [m/s]
 ```
 
+A graphical representation of this result is shown of the figure below
+
+<img src="sortie_phase_zeropm2suitesuite.png">
+
+where a genuine record was collected (top=Doppler shift of the detected satellite, middle=phase
+between antennas, bottom=position) initialle (left), then with a spoofing signal generating
+a location West of France in Britanny (Brest) for 6 minutes, before returning to the genuine 
+signal, and finally genuine signal decoding (right) of the correct location in Besancon (East of
+France).
+
 See 
 [1] and [2] for an explanation on the analaysis of the standard deviation of the phase between
 antennas.
