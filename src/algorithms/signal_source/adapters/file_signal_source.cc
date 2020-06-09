@@ -21,6 +21,7 @@
 
 #include "file_signal_source.h"
 #include "configuration_interface.h"
+#include "spoofing_detection.h"
 #include "gnss_sdr_flags.h"
 #include "gnss_sdr_valve.h"
 #include <glog/logging.h>
@@ -41,9 +42,19 @@ FileSignalSource::FileSignalSource(const ConfigurationInterface* configuration,
 
     const double default_seconds_to_skip = 0.0;
 
+    //size_t header_size = 0;
     samples_ = configuration->property(role + ".samples", static_cast<uint64_t>(0));
     sampling_frequency_ = configuration->property(role + ".sampling_frequency", static_cast<int64_t>(0));
-    filename_ = configuration->property(role + ".filename", default_filename);
+    spoofing_protection_  = configuration->property(role + ".spoofing_protection", 0);
+    if (spoofing_protection_ !=0) 
+         {printf("Spoofing: %d\n",spoofing_protection_);
+          filename_ = configuration->property(role + ".filename", default_filename);
+          filename2_ = configuration->property(role + ".filename", default_filename);
+          filename_=filename_+"_1.bin";
+          filename2_=filename2_+"_2.bin";
+         }
+    else
+         filename_ = configuration->property(role + ".filename", default_filename);
 
     // override value with commandline flag, if present
     if (FLAGS_signal_source != "-")
@@ -101,7 +112,12 @@ FileSignalSource::FileSignalSource(const ConfigurationInterface* configuration,
         }
     try
         {
-            file_source_ = gr::blocks::file_source::make(item_size_, filename_.c_str(), repeat_);
+            if (spoofing_protection_ !=0) 
+               {file_source_ = gr::blocks::file_source::make(item_size_, filename_.c_str(), repeat_);
+                file_source2_= gr::blocks::file_source::make(item_size_, filename2_.c_str(), repeat_);
+               }
+            else
+               file_source_ = gr::blocks::file_source::make(item_size_, filename_.c_str(), repeat_);
 
             if (seconds_to_skip > 0)
                 {
@@ -200,6 +216,10 @@ FileSignalSource::FileSignalSource(const ConfigurationInterface* configuration,
     std::cout << "GNSS signal recorded time to be processed: " << signal_duration_s << " [s]\n";
 
     valve_ = gnss_sdr_make_valve(item_size_, samples_, queue);
+    if (spoofing_protection_ !=0) 
+        {valve2_ = gnss_sdr_make_valve(item_size_, samples_, queue);
+         spoofing_detect_=gnss_sdr_make_spoof(item_size_, queue);
+        }
     DLOG(INFO) << "valve(" << valve_->unique_id() << ")";
 
     if (dump_)
@@ -251,6 +271,12 @@ void FileSignalSource::connect(gr::top_block_sptr top_block)
             else
                 {
                     top_block->connect(file_source_, 0, valve_, 0);
+                    if (spoofing_protection_ !=0)   
+                        {
+                         top_block->connect(file_source2_, 0, valve2_, 0);
+                         top_block->connect(valve2_, 0, spoofing_detect_, 1);
+                         top_block->connect(valve_,  0, spoofing_detect_, 0);
+                        }
                     DLOG(INFO) << "connected file source to valve";
                     if (dump_)
                         {
@@ -343,6 +369,10 @@ gr::basic_block_sptr FileSignalSource::get_left_block()
 
 gr::basic_block_sptr FileSignalSource::get_right_block()
 {
+    if (spoofing_protection_ !=0)   
+        { 
+            return spoofing_detect_;
+        }
     if (samples_ > 0)
         {
             return valve_;

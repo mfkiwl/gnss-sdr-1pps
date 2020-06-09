@@ -78,8 +78,10 @@ private:
     gr::uhd::usrp_source::sptr uhd_source_;
 #if GNURADIO_USES_STD_POINTERS
     std::vector<std::shared_ptr<gr::block>> valve_;
+    std::shared_ptr<gr::block> spoofing_detect_;
 #else
     std::vector<boost::shared_ptr<gr::block>> valve_;
+    boost::shared_ptr<gr::block> spoofing_detect_;
 #endif
     std::vector<gr::blocks::file_sink::sptr> file_sink_;
     std::vector<double> freq_;
@@ -100,6 +102,7 @@ private:
     double sample_rate_;
     size_t item_size_;
     int RF_channels_;
+    int spoofing_protection_;
     unsigned int in_stream_;
     unsigned int out_stream_;
 };

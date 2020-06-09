@@ -104,10 +104,15 @@ public:
 
 private:
     gr::blocks::file_source::sptr file_source_;
+    gr::blocks::file_source::sptr file_source2_;
 #if GNURADIO_USES_STD_POINTERS
     std::shared_ptr<gr::block> valve_;
+    std::shared_ptr<gr::block> valve2_;
+    std::shared_ptr<gr::block> spoofing_detect_;
 #else
     boost::shared_ptr<gr::block> valve_;
+    boost::shared_ptr<gr::block> valve2_;
+    boost::shared_ptr<gr::block> spoofing_detect_;
 #endif
     gr::blocks::file_sink::sptr sink_;
     gr::blocks::throttle::sptr throttle_;
@@ -115,6 +120,7 @@ private:
     std::string role_;
     std::string item_type_;
     std::string filename_;
+    std::string filename2_;
     std::string dump_filename_;
 
     uint64_t samples_;
@@ -123,6 +129,8 @@ private:
 
     uint32_t in_streams_;
     uint32_t out_streams_;
+
+    int spoofing_protection_;
 
     bool enable_throttle_control_;
     bool repeat_;
