@@ -63,3 +63,13 @@ Position at 2019-Nov-26 07:58:00.500000 UTC using 4 observations is Lat = 47.254
 Velocity: East: -0.045 [m/s], North: 0.182 [m/s], Up = 0.434 [m/s]
 ```
 
+See 
+[1] and [2] for an explanation on the analaysis of the standard deviation of the phase between
+antennas.
+
+[1] J.-M. Friedt, W. Feng
+Anti-leurrage et anti-brouillage de GPS par réseau d'antennes, MISC 110 (2020) [in French]
+
+[2] J.-M. Friedt, W. Feng, G. Goavec-Merou, F. Meyer, GPS spoofing implementation by Software Defined 
+Radio and computationally efficient GPS spoofing detection and cancellation (submitted, 2020)
+
