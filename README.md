@@ -66,7 +66,6 @@ Position at 2019-Nov-26 07:58:00.500000 UTC using 4 observations is Lat = 47.254
 Velocity: East: -0.045 [m/s], North: 0.182 [m/s], Up = 0.434 [m/s]
 ```
 
-<<<<<<< HEAD
 A graphical representation of this result is shown of the figure below
 
 <img src="sortie_phase_zeropm2suitesuite.png">
@@ -96,13 +95,10 @@ is detected, as expected from the GNSS receiver.
 
 <img src="2020-06-29-195520_2704x1050_scrot_ann.png">
 
-=======
->>>>>>> 82cc87974... references
 See 
 [1] and [2] for an explanation on the analaysis of the standard deviation of the phase between
 antennas.
 
-<<<<<<< HEAD
 ## Jamming cancellation
 
 Jamming cancellation cannot rely on the BPSK structure of the spoofing signal. Hence a more
@@ -119,8 +115,6 @@ following figure:
 
 <img src="with_sgd2.png">
 
-=======
->>>>>>> 82cc87974... references
 [1] J.-M. Friedt, W. Feng
 Anti-leurrage et anti-brouillage de GPS par réseau d'antennes, MISC 110 (2020) [in French]
 
