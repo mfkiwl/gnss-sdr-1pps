@@ -18,38 +18,38 @@ Activating the Spoofing Detection flag is achieved by adding the
 ``SignalSource.spoofing_protection=1`` flag in the configuration file.
 
 Most basic compilation:
-``shell
+```shell
 cd build
 cmake ../
 make -j4
 ./src/main/gnss-sdr -c ../File-GNSS-SDR-receiver.conf
-``
+```
 assuming the ``File-GNSS-SDR-receiver.conf`` has been updated to point to an existing
 pair of files recorded e.g. from a B210 as a spoofing signal was being emitted. The
 File Source format is to provide directory + beginning of the file name and the
 extension '_1.bin' and '_2.bin' will be added when loading the files. In this example,
 the files are
-``shell
+```shell
 $ ls -l /t/7_m35dBm/
 -rw-r--r-- 1 xxx xxx 1964160000 Jun  5 17:23 7_m35dBm_1.bin
 -rw-r--r-- 1 xxx xxx 1964160000 Jun  5 17:24 7_m35dBm_2.bin
-``
+```
 
 Running the spoofing detection mechanism from gnss-sdr on these files will display
-``shell
+```shell
 10:     meanarg=0.6722  meanabs=8.122   stdargres_=0.00061      weightabs=8.09,weightarg=0.68 /!\
-``
+```
 with stdargres_=0.00061 meaning spoofing is occuring (the standard deviation on the angle
 of arrival is too low to be compatible with a genuine constellation). The threshold detection
 indicating spoofing was triggered with the /!\ sign at the end of the line.
 
 On a genuine constellation,
-``shell
+```shell
 13:     meanarg=-0.2871 meanabs=7.054   stdargres_=3.39117      weightabs=0.00,weightarg=0.00
-``
+```
 indicates, through its large stdargres_ value, that no spoofing is occuring. Under such conditions,
 decoding is performed as would be done with a classical gnss analysis sequence
-``shell
+```shell
 8:      meanarg=-0.5817 meanabs=6.539   stdargres_=3.87295      weightabs=0.00,weightarg=0.00
 New GPS NAV message received in channel 0: subframe 3 from satellite GPS PRN 01 (Block IIF)
 New GPS NAV message received in channel 17: subframe 3 from satellite GPS PRN 22 (Block IIR)
@@ -61,5 +61,5 @@ First position fix at 2019-Nov-26 07:58:00.120000 UTC is Lat = 47.2534 [deg], Lo
 7:      meanarg=-0.3519 meanabs=7.124   stdargres_=3.90482      weightabs=0.00,weightarg=0.00
 Position at 2019-Nov-26 07:58:00.500000 UTC using 4 observations is Lat = 47.254877320 [deg], Long = 5.994379292 [deg], Height = 885.775 [m]
 Velocity: East: -0.045 [m/s], North: 0.182 [m/s], Up = 0.434 [m/s]
-``
+```
 
