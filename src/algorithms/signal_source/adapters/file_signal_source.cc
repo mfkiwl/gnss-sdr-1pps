@@ -21,7 +21,7 @@
 
 #include "file_signal_source.h"
 #include "configuration_interface.h"
-#include "spoofing_detection.h"
+#include "jmf_spoofing.h"
 #include "gnss_sdr_flags.h"
 #include "gnss_sdr_valve.h"
 #include <glog/logging.h>
@@ -47,11 +47,12 @@ FileSignalSource::FileSignalSource(const ConfigurationInterface* configuration,
     sampling_frequency_ = configuration->property(role + ".sampling_frequency", static_cast<int64_t>(0));
     spoofing_protection_  = configuration->property(role + ".spoofing_protection", 0);
     if (spoofing_protection_ !=0) 
-         {printf("Spoofing: %d\n",spoofing_protection_);
+         {printf("JMF %d -- ",spoofing_protection_);
           filename_ = configuration->property(role + ".filename", default_filename);
           filename2_ = configuration->property(role + ".filename", default_filename);
           filename_=filename_+"_1.bin";
           filename2_=filename2_+"_2.bin";
+          printf("%s %s\n",filename_.c_str(),filename2_.c_str());
          }
     else
          filename_ = configuration->property(role + ".filename", default_filename);
@@ -274,8 +275,8 @@ void FileSignalSource::connect(gr::top_block_sptr top_block)
                     if (spoofing_protection_ !=0)   
                         {
                          top_block->connect(file_source2_, 0, valve2_, 0);
-                         top_block->connect(valve2_, 0, spoofing_detect_, 1);
-                         top_block->connect(valve_,  0, spoofing_detect_, 0);
+                         top_block->connect(valve2_, 0, jmf_spoofing_, 1);
+                         top_block->connect(valve_,  0, jmf_spoofing_, 0);
                         }
                     DLOG(INFO) << "connected file source to valve";
                     if (dump_)
@@ -371,7 +372,7 @@ gr::basic_block_sptr FileSignalSource::get_right_block()
 {
     if (spoofing_protection_ !=0)   
         { 
-            return spoofing_detect_;
+            return jmf_spoofing_;
         }
     if (samples_ > 0)
         {

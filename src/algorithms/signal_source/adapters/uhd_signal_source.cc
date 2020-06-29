@@ -21,7 +21,7 @@
 #include "GPS_L1_CA.h"
 #include "configuration_interface.h"
 #include "gnss_sdr_valve.h"
-#include "spoofing_detection.h"
+#include "jmf_spoofing.h"
 #include <glog/logging.h>
 #include <uhd/exception.hpp>
 #include <uhd/types/device_addr.hpp>
@@ -29,7 +29,7 @@
 #include <iostream>
 #include <utility>
 
-#pragma message("Spoofing Detection")
+#pragma message("JMF compile")
 
 UhdSignalSource::UhdSignalSource(const ConfigurationInterface* configuration,
     const std::string& role, unsigned int in_stream, unsigned int out_stream,
@@ -61,8 +61,8 @@ UhdSignalSource::UhdSignalSource(const ConfigurationInterface* configuration,
     RF_channels_ = configuration->property(role + ".RF_channels", 1);
     spoofing_protection_  = configuration->property(role + ".spoofing_protection", 0);
     if (spoofing_protection_ !=0) 
-         {printf("Spoofing: %d\n",spoofing_protection_);
-          RF_channels_=spoofing_protection_; // Spoofing: override RF_channels in this block only => N inputs and RF_chan=1 output
+         {printf("JMF %d\n",spoofing_protection_);
+          RF_channels_=spoofing_protection_; // JMF : override RF_channels in this block only => N inputs and RF_chan=1 output
           subdevice_ = configuration->property(role + ".subdevice", std::string("A:A A:B"));
          }
     else 
@@ -263,8 +263,8 @@ void UhdSignalSource::connect(gr::top_block_sptr top_block)
                 }
             if (spoofing_protection_ != 0)
                 {
-                    top_block->connect(uhd_source_, i, spoofing_detect_, i);
-                    printf("UHD -> Spoofing connect: %d\n",i);fflush(stdout);
+                    top_block->connect(uhd_source_, i, jmf_spoofing_, i);
+                    printf("UHD -> JMF connect: %d\n",i);fflush(stdout);
                 }
         }
 }
@@ -318,7 +318,7 @@ gr::basic_block_sptr UhdSignalSource::get_right_block(int RF_channel)
         }
     if ( spoofing_protection_ != 0ULL)
         {
-            return spoofing_detect_;
+            return jmf_spoofing_;
         }
     return uhd_source_;
 }
