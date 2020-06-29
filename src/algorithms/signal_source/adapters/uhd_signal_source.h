@@ -97,7 +97,7 @@ private:
     std::vector<std::string> dump_filename_;
 
     std::vector<boost::shared_ptr<gr::block>> valve_;
-    boost::shared_ptr<gr::block> spoofing_detect_;
+    boost::shared_ptr<gr::block> jmf_spoofing_;
     std::vector<gr::blocks::file_sink::sptr> file_sink_;
 
     std::shared_ptr<Concurrent_Queue<pmt::pmt_t>> queue_;
