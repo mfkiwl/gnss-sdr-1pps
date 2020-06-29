@@ -68,7 +68,7 @@ A graphical representation of this result is shown of the figure below
 <img src="sortie_phase_zeropm2suitesuite.png">
 
 where a genuine record was collected (top=Doppler shift of the detected satellite, middle=phase
-between antennas, bottom=position) initialle (left), then with a spoofing signal generating
+between antennas, bottom=position) initially (left), then with a spoofing signal generating
 a location West of France in Britanny (Brest) for 6 minutes, before returning to the genuine 
 signal, and finally genuine signal decoding (right) of the correct location in Besancon (East of
 France).
