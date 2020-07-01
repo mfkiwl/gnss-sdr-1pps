@@ -21,7 +21,7 @@
 
 #include "file_signal_source.h"
 #include "configuration_interface.h"
-#include "jmf_spoofing.h"
+#include "spoofing_detection.h"
 #include "gnss_sdr_flags.h"
 #include "gnss_sdr_valve.h"
 #include <glog/logging.h>
