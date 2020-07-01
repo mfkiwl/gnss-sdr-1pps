@@ -82,7 +82,7 @@ private:
     float stdargres_;
     int avg_index_;
     int num_file_;
-    int spooofing_memory_;
+    int spoofing_memory_;
     uint64_t d_ncopied_items;
     int first_time_;
     std::shared_ptr<Concurrent_Queue<pmt::pmt_t>> d_queue;
