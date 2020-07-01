@@ -21,7 +21,7 @@
 #include "GPS_L1_CA.h"
 #include "configuration_interface.h"
 #include "gnss_sdr_valve.h"
-#include "jmf_spoofing.h"
+#include "spoofing_detection.h"
 #include <glog/logging.h>
 #include <uhd/exception.hpp>
 #include <uhd/types/device_addr.hpp>
