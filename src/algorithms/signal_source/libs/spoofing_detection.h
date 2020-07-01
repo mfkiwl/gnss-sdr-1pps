@@ -39,8 +39,9 @@
 #include <gnuradio/fft/fft.h>
 #include <gnuradio/fft/fft_shift.h>
 
-#define CHUNK_SIZE (2048*8*2) // ~1023 MS/s/32768=30~Hz/bin
-#define KEEP_SIZE   (600)     // 30 Hz/bin * 600 = ~+/-20 kHz
+// #define CHUNK_SIZE (2048*8*2) // ~1023 MS/s/32768=30~Hz/bin
+#define CHUNK_SIZE (8192*64) // cf Matlab
+#define KEEP_SIZE   (25000)  // +/-50 kHz
 
 class Gnss_Spoofing_Protect;
 #if GNURADIO_USES_STD_POINTERS
@@ -94,6 +95,7 @@ private:
     float stdargres_;
     int avg_index_;
     int num_file_;
+    int spooofing_memory_;
     uint64_t d_ncopied_items;
     int first_time_;
     Concurrent_Queue<pmt::pmt_t>* d_queue;
