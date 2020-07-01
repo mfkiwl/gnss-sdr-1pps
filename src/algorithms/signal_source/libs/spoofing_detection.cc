@@ -295,11 +295,11 @@ if (maxpos!=0) {printf("JMF: sync error\n");fflush(stdout);}
     else
       {if (stdargres_<=STD_THRESHOLD)
           {printf(" /!\\\n");
-           spoofing_memory=MEMORY_LEN; // reinit memory
+           spoofing_memory_=MEMORY_LEN; // reinit memory
           }
        else
           {printf(" \\!/\n");
-           spoofing_memory--;  // stdargres_ was > STD_THRESHOLD so spoofing_memory_>0 and --
+           spoofing_memory_--;  // stdargres_ was > STD_THRESHOLD so spoofing_memory_>0 and --
           }
        volk_32fc_s32fc_multiply_32fc(carre,(const gr_complex*)input_items[1],weight_,CHUNK_SIZE); // -alpha*ant0
        volk_32fc_x2_add_32fc((gr_complex*)output_items[0], (const gr_complex*)input_items[0], carre, CHUNK_SIZE);
