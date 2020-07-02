@@ -48,7 +48,7 @@ Gnss_Spoofing_Protect::Gnss_Spoofing_Protect(size_t sizeof_stream_item,
                            d_ncopied_items(0),
                            d_queue(std::move(queue))
 {
-    printf("JMF Gnss_Spoofing_Protect\n");
+    printf("Gnss_Spoofing_Protect\n");
 /*
 Ron Economos (April 5, 2020 10:58 AM)
 To: discuss-gnuradio@gnu.org
@@ -79,7 +79,7 @@ boost::shared_ptr<Gnss_Spoofing_Protect> gnss_sdr_make_spoof(size_t sizeof_strea
 {
 //    unsigned int alignment = volk_get_alignment();
     boost::shared_ptr<Gnss_Spoofing_Protect> spoofing_detection(new Gnss_Spoofing_Protect(sizeof_stream_item, std::move(queue)));
-    printf("JMF variable created\n");
+    printf("Spoofing detection: variable created\n");
 /*
     spoofing_average=(gr_complex*)volk_malloc(sizeof(gr_complex)*KEEP_SIZE*2,alignement); // 2* since sta followed by sto -> must fftshift to put 0 at center
     bufout0_sta=(gr_complex*)volk_malloc(sizeof(gr_complex)*KEEP_SIZE,alignement);
@@ -103,6 +103,7 @@ int Gnss_Spoofing_Protect::work(int noutput_items,
     gr_complex* bufin;
 #ifdef moycpl
     gr_complex stddiv[MAXSAT];
+    gr_complex integral;
 #else
      float meanarg,meanabs,stdarg[MAXSAT],stdabs[MAXSAT],weightabs=0.,weightarg=0.;
 #endif
@@ -117,8 +118,8 @@ int Gnss_Spoofing_Protect::work(int noutput_items,
 // see https://github.com/gnss-sdr/gnss-sdr/blob/master/src/algorithms/acquisition/gnuradio_blocks/pcps_acquisition_fine_doppler_cc.h for declaration of gr::fft
 //    gr::fft::fft_complex* plan = new gr::fft::fft_complex(CHUNK_SIZE, true);
     bufin=plan->get_inbuf();
-//    printf("JMF block: %d items, %ld out, %ld in\n",noutput_items,output_items.size(),input_items.size());
-//           JMF block: 32768 items, 1 out, 2 in
+//    printf("Spoofing block: %d items, %ld out, %ld in\n",noutput_items,output_items.size(),input_items.size());
+//            Spoofing block: 32768 items, 1 out, 2 in
     if (input_items.size()!=2) first_time_=1; // don't save if other than 2 input channels
 /////////// CHECK FILES RUN AT THE SAME RATE
 // select same file with different filenames
@@ -130,9 +131,10 @@ int Gnss_Spoofing_Protect::work(int noutput_items,
        {if (carre[i].real()!=0) {printf("%d: real !=0\n",i);maxpos=i;}
         if (carre[i].imag()!=0) {printf("%d: imag !=0\n",i);maxpos=i;}
        }  
-if (maxpos!=0) {printf("JMF: sync error\n");fflush(stdout);}
+if (maxpos!=0) {printf("Spoofing: sync error\n");fflush(stdout);}
 */
 /////////// END CHECK FILES RUN AT THE SAME RATE
+
     for (ch = 0; ch < input_items.size(); ch++)
         { // identity: output the same as 1st channel input
           in= (const gr_complex*)input_items[ch]; // all channels
@@ -187,7 +189,7 @@ if (maxpos!=0) {printf("JMF: sync error\n");fflush(stdout);}
 */
         }
     if (avg_index_==Navg)    // restart averaging
-      {//volk_32fc_magnitude_squared_32f(jmf_mag,spoofing_average,KEEP_SIZE*2);
+      {//volk_32fc_magnitude_squared_32f(spoofing_mag,spoofing_average,KEEP_SIZE*2);
 // https://www.libvolk.org/doxygen/volk_32fc_index_max_16u.html
 // Finds and returns the index which contains the maximum magnitude for complex points in the given vector
        volk_32fc_index_max_16u(&maxpos, &spoofing_average_mul[KEEP_SIZE-10],20);  // max value where there should be no satellite
@@ -242,9 +244,17 @@ if (maxpos!=0) {printf("JMF: sync error\n");fflush(stdout);}
            for (i=0;i<count;i++) {stdargres_+=(stdarg[i]-meanarg)*(stdarg[i]-meanarg);}
 #endif
            stdargres_/=(float)(count);
-           printf("%d:\t%.5f\t",count,stdargres_);fflush(stdout);
+           printf("%d:\tstdargs=%.5f\t",count,stdargres_);fflush(stdout);
            if (stdargres_<=STD_THRESHOLD) //  spoofing
              {
+// initial phase estimate, from S.Daneshmand, A.Jafarnia-Jahromi, A.Broumandan, and G.Lachapelle, 
+// A low-complexity GPS anti-spoofing method using a multi-antenna array,” vol. 2, pp. 2, 2012.
+              volk_32fc_x2_multiply_conjugate_32fc(carre,(const gr_complex*)input_items[0],(const gr_complex*)input_items[1],CHUNK_SIZE);
+              integral={0.,0.};
+              for (ch = 0; ch < CHUNK_SIZE; ch++) integral+=carre[ch];
+              // integrale/=CHUNK_SIZE;
+              printf("1st estimate: %.5f\t",arg(integral));
+
 #ifndef moycpl
               weightabs=0.;
               weightarg=0.;
@@ -278,6 +288,10 @@ if (maxpos!=0) {printf("JMF: sync error\n");fflush(stdout);}
 #else
               weight_={(weightabs)*cosf(weightarg),(weightabs)*sinf(weightarg)}; // .=(A1/A2)^2  WHY +pi ?
 #endif
+              if (abs(arg(weight_)-arg(integral))<0.7) 
+                 {printf("*");
+                  weight_=-weight_; // add pi to phase => subtract weight
+                 }
              }
            printf("weightabs=%.2f,weightarg=%.2f",abs(weight_),arg(weight_));
           }
