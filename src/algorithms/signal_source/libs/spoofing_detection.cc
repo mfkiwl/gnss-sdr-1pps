@@ -93,6 +93,7 @@ int Gnss_Spoofing_Protect::work(int noutput_items,
     float maxval,maxvallim;
     gr_complex weightcpl={0.,0.};
     gr_complex* bufin;
+    int opposite;
 #ifdef moycpl
     gr_complex stddiv[MAXSAT];
     gr_complex integral;
@@ -283,7 +284,9 @@ if (maxpos!=0) {printf("Spoofing: sync error\n");fflush(stdout);}
               if (abs(arg(weight_)-arg(integral))<0.7) 
                  {printf("*");
                   weight_=-weight_; // add pi to phase => subtract weight
+                  opposite=1;
                  }
+              else opposite=0;
              }
            printf("weightabs=%.2f,weightarg=%.2f",abs(weight_),arg(weight_));
           }
@@ -309,6 +312,8 @@ if (maxpos!=0) {printf("Spoofing: sync error\n");fflush(stdout);}
           }
        volk_32fc_s32fc_multiply_32fc(carre,(const gr_complex*)input_items[1],weight_,CHUNK_SIZE); // -alpha*ant0
        volk_32fc_x2_add_32fc((gr_complex*)output_items[0], (const gr_complex*)input_items[0], carre, CHUNK_SIZE);
+       if (opposite==1)
+          volk_32fc_s32fc_multiply_32fc((gr_complex*)output_items[0],(gr_complex*)output_items[0],-1,CHUNK_SIZE); // opposite
       }
 //    delete plan;
     volk_free(carre);
