@@ -14,8 +14,11 @@ The Signal_Source philosophy is probably broken by including the spoofing detect
 processing in [spoofing_detection](src/algorithms/signal_source/libs/spoofing_detection.cc). 
 This solves the issue of multiple antenna-inputs and single output.
 
+## Spoofing detection and cancellation
+
 Activating the Spoofing Detection flag is achieved by adding the
-``SignalSource.spoofing_protection=1`` flag in the configuration file.
+``SignalSource.spoofing_protection=2`` flag in the configuration file (the argument
+2 meaning two antennas, which is the only supported value at the moment).
 
 Most basic compilation:
 ```shell
@@ -95,6 +98,22 @@ is detected, as expected from the GNSS receiver.
 See 
 [1] and [2] for an explanation on the analaysis of the standard deviation of the phase between
 antennas.
+
+## Jamming cancellation
+
+Jamming cancellation cannot rely on the BPSK structure of the spoofing signal. Hence a more
+generic technique for identifying the copy of the signal found on one antenna to cancel its contribution
+on the second antenna is needed. The Stochastic Gradient Descent (SGD) has been identified as
+a computationally efficient way of achieving this result.
+
+Activating the SGD jamming cancellation is achieved with ``SignalSource.sgd=2`` (the argument
+2 meaning two antennas, which is the only supported value at the moment).
+
+As a demonstration of the efficiency, genuine constellation - jamming - rotating the array by 90 degrees
+while jamming - back to original position with jammin - genuine constellation is illustrated in the
+following figure:
+
+<img src="with_sgd2.png">
 
 [1] J.-M. Friedt, W. Feng
 Anti-leurrage et anti-brouillage de GPS par réseau d'antennes, MISC 110 (2020) [in French]
