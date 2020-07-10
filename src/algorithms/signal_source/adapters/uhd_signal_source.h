@@ -83,6 +83,7 @@ private:
     double sample_rate_;
     int RF_channels_;
     int spoofing_protection_;
+    int sgd_;
     std::string item_type_;
     size_t item_size_;
 
@@ -98,6 +99,7 @@ private:
 
     std::vector<boost::shared_ptr<gr::block>> valve_;
     boost::shared_ptr<gr::block> jmf_spoofing_;
+    boost::shared_ptr<gr::block> jmf_sgd_;
     std::vector<gr::blocks::file_sink::sptr> file_sink_;
 
     std::shared_ptr<Concurrent_Queue<pmt::pmt_t>> queue_;

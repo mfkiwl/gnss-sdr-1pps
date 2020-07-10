@@ -14,9 +14,6 @@ if(ENABLE_FMCOMMS2 OR ENABLE_AD9361)
     set(OPT_SIGNAL_SOURCE_LIB_HEADERS ad9361_manager.h)
 endif()
     
-set(OPT_SIGNAL_SOURCE_LIB_SOURCES ${OPT_SIGNAL_SOURCE_LIB_SOURCES} spoofing_detection.cc)
-set(OPT_SIGNAL_SOURCE_LIB_HEADERS ${OPT_SIGNAL_SOURCE_LIB_HEADERS} spoofing_detection.h)
-
 if(ENABLE_FPGA OR ENABLE_AD9361)
     set(OPT_SIGNAL_SOURCE_LIB_SOURCES ${OPT_SIGNAL_SOURCE_LIB_SOURCES} fpga_switch.cc)
     set(OPT_SIGNAL_SOURCE_LIB_HEADERS ${OPT_SIGNAL_SOURCE_LIB_HEADERS} fpga_switch.h)
@@ -26,6 +23,8 @@ set(SIGNAL_SOURCE_LIB_SOURCES
     rtl_tcp_commands.cc
     rtl_tcp_dongle_info.cc
     gnss_sdr_valve.cc
+    sgd_impl.cc
+    spoofing_detection.cc
     ${OPT_SIGNAL_SOURCE_LIB_SOURCES}
 )
 
@@ -33,6 +32,8 @@ set(SIGNAL_SOURCE_LIB_HEADERS
     rtl_tcp_commands.h
     rtl_tcp_dongle_info.h
     gnss_sdr_valve.h
+    spoofing_detection
+    sgd.h
     ${OPT_SIGNAL_SOURCE_LIB_HEADERS}
 )
 
