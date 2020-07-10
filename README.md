@@ -73,6 +73,25 @@ a location West of France in Britanny (Brest) for 6 minutes, before returning to
 signal, and finally genuine signal decoding (right) of the correct location in Besancon (East of
 France).
 
+This same sequence was repeated with real time cancellation of a static poofing source as 
+illustrated below:
+
+1/ despite spoofing by the PlutoSDR with a signal attenuated by 40 dB, the correct
+position (47N, E) is decoded with SV identifiers from the genuine constellation (03,
+14, 19 ans 22) none of which is part of the spoofing signal.
+
+<img src="2020-06-29-195031_2704x1050_scrotann.png">
+
+2/ if spoofing cancellation is de-activated, under the exact same conditions, the erroneous
+position (48N, 4W) is decoded.
+
+<img src="2020-06-29-195241_2704x1050_scrotann.png">
+
+3/ Similarly, if the spoofing source is deactivated, the genuine position
+is detected, as expected from the GNSS receiver.
+
+<img src="2020-06-29-195520_2704x1050_scrot_ann.png">
+
 See 
 [1] and [2] for an explanation on the analaysis of the standard deviation of the phase between
 antennas.
