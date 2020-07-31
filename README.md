@@ -14,6 +14,30 @@ The Signal_Source philosophy is probably broken by including the spoofing detect
 processing in [spoofing_detection](src/algorithms/signal_source/libs/spoofing_detection.cc). 
 This solves the issue of multiple antenna-inputs and single output.
 
+## New configuration options
+
+The two sources for which configuration options have been added are File Source and UHD Source
+aimed at the B210 (two coherent input channels).
+
+For the file source: the base filename is provided and we assume that two files exist, ``base_1.bin``
+and ``base_2.bin``. Hence, the new argument
+```
+SignalSource.spoofing_protection=2
+```
+will change the behaviour of the ``SignalSource.filename`` option by appending ``_1.bin`` and
+``_2.bin``. The only processing block available in this case is the spoofing detection and 
+cancellation.
+
+For the UHD source: ``SignalSource.spoofing_protection=N`` will activate ``N`` channels. Since
+we aim at the B210, at the moment only ``N=2`` is supported since we explicitly state that
+the channels are A:A and A:B meaning the two RX2 inputs. Spoofing protection expects a disturbing
+signal with a BPSK structure. Alternatively, for noise detection and cancellation (no
+assumption on the disturbing signal structure), a Stochastic Descent Gradient Approach (SGD) has
+been implemented. This is activated with ``SignalSource.sgd=N``, with only ``N=2`` supported
+as well, and is exclusive to ``spoofing_protection`` (either spoofing_protection or sgd,
+but not both).
+
+
 ## Spoofing detection and cancellation
 
 Activating the Spoofing Detection flag is achieved by adding the
