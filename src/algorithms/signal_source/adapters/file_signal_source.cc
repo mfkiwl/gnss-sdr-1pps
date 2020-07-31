@@ -275,8 +275,8 @@ void FileSignalSource::connect(gr::top_block_sptr top_block)
                     if (spoofing_protection_ !=0)   
                         {
                          top_block->connect(file_source2_, 0, valve2_, 0);
-                         top_block->connect(valve2_, 0, jmf_spoofing_, 1);
-                         top_block->connect(valve_,  0, jmf_spoofing_, 0);
+                         top_block->connect(valve2_, 0, spoofing_detect_, 1);
+                         top_block->connect(valve_,  0, spoofing_detect_, 0);
                         }
                     DLOG(INFO) << "connected file source to valve";
                     if (dump_)
@@ -372,7 +372,7 @@ gr::basic_block_sptr FileSignalSource::get_right_block()
 {
     if (spoofing_protection_ !=0)   
         { 
-            return jmf_spoofing_;
+            return spoofing_detect_;
         }
     if (samples_ > 0)
         {

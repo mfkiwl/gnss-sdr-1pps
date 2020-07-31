@@ -76,31 +76,16 @@ public:
 
 private:
     gr::uhd::usrp_source::sptr uhd_source_;
-<<<<<<< HEAD
 #if GNURADIO_USES_STD_POINTERS
     std::vector<std::shared_ptr<gr::block>> valve_;
     std::shared_ptr<gr::block> spoofing_detect_;
+    std::shared_ptr<gr::block> spoofing_sgd_;
 #else
     std::vector<boost::shared_ptr<gr::block>> valve_;
     boost::shared_ptr<gr::block> spoofing_detect_;
+    boost::shared_ptr<gr::block> spoofing_sgd_;
 #endif
     std::vector<gr::blocks::file_sink::sptr> file_sink_;
-=======
-
-    // UHD SETTINGS
-    uhd::stream_args_t uhd_stream_args_;
-    std::string device_address_;
-    double sample_rate_;
-    int RF_channels_;
-    int spoofing_protection_;
-    int sgd_;
-    std::string item_type_;
-    size_t item_size_;
-
-    std::string subdevice_;
-    std::string clock_source_;
-
->>>>>>> 9c33eafbd... Stochastic Gradient Descent for jamming (and probably spoofing) suppression
     std::vector<double> freq_;
     std::vector<double> gain_;
     std::vector<double> IF_bandwidth_hz_;
@@ -108,14 +93,7 @@ private:
     std::vector<std::string> dump_filename_;
     std::vector<bool> dump_;
 
-<<<<<<< HEAD
     uhd::stream_args_t uhd_stream_args_;  // UHD SETTINGS
-=======
-    std::vector<boost::shared_ptr<gr::block>> valve_;
-    boost::shared_ptr<gr::block> jmf_spoofing_;
-    boost::shared_ptr<gr::block> jmf_sgd_;
-    std::vector<gr::blocks::file_sink::sptr> file_sink_;
->>>>>>> 9c33eafbd... Stochastic Gradient Descent for jamming (and probably spoofing) suppression
 
     std::string device_address_;
     std::string item_type_;
@@ -127,6 +105,7 @@ private:
     size_t item_size_;
     int RF_channels_;
     int spoofing_protection_;
+    int sgd_;
     unsigned int in_stream_;
     unsigned int out_stream_;
 };

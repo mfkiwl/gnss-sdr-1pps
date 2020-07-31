@@ -21,7 +21,7 @@
  */
 
 #include "spoofing_detection.h"
-#include "command_event.h"
+//#include "command_event.h"
 #include <glog/logging.h>           // for LOG
 #include <gnuradio/io_signature.h>  // for io_signature
 #include <algorithm>                // for min

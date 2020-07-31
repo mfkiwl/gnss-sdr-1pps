@@ -26,12 +26,22 @@
 #include "sgd.h"
 
 //#define DEBUG_COEFF
+
+#if GNURADIO_USES_STD_POINTERS
+std::shared_ptr<sgd_impl> gnss_sdr_make_sgd(
+    int delay_max, float seuil, float alpha)
+{
+	std::shared_ptr<sgd_impl> sgd_inst(new sgd_impl(delay_max, seuil, alpha));
+	return sgd_inst;
+}
+#else
 boost::shared_ptr<sgd_impl> gnss_sdr_make_sgd(
     int delay_max, float seuil, float alpha)
 {
 	boost::shared_ptr<sgd_impl> sgd_inst(new sgd_impl(delay_max, seuil, alpha));
 	return sgd_inst;
 }
+#endif
 
 
 
