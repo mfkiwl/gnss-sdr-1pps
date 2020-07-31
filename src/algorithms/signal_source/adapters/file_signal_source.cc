@@ -181,7 +181,7 @@ FileSignalSource::FileSignalSource(const ConfigurationInterface* configuration,
              */
             std::ifstream file(filename_.c_str(), std::ios::in | std::ios::binary | std::ios::ate);
             std::ifstream::pos_type size;
-
+ 
             if (file.is_open())
                 {
                     size = file.tellg();
