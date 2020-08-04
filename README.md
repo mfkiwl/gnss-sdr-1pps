@@ -131,7 +131,17 @@ on the second antenna is needed. The Stochastic Gradient Descent (SGD) has been 
 a computationally efficient way of achieving this result.
 
 Activating the SGD jamming cancellation is achieved with ``SignalSource.sgd=2`` (the argument
-2 meaning two antennas, which is the only supported value at the moment).
+2 meaning two antennas, which is the only supported value at the moment). The SGD algorithm accepts many
+parameters, all of which can be tuned from the configuration file. 
+* ``SignalSource.sgd_mean=true`` means that the weight calculated from the SGD is subject to a sliding average,
+improving the algorithm stability
+* ``SignalSource.sgd_mean_length=1000`` indicates the sliding average length, a tradeoff between stabilization and
+dynamic response to varying jamming sources
+* ``SignalSource.sgd_iter_count=10000`` indicates how often the weighting is reset. The contribution of the correction
+to the weight decreases as the square root of the iteration number and is periodically reset to fully correct
+the current coefficient value. This variable tells how often the reset occurs.
+* ``SignalSource.sgd_alpha=1.0`` is the weight correction factor. The smaller the value, the slower the convergence, but too
+high a value will lead to instability of the algorithm.
 
 As a demonstration of the efficiency, genuine constellation - jamming - rotating the array by 90 degrees
 while jamming - back to original position with jammin - genuine constellation is illustrated in the
