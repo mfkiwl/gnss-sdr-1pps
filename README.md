@@ -14,6 +14,22 @@ The Signal_Source philosophy is probably broken by including the spoofing detect
 processing in [spoofing_detection](src/algorithms/signal_source/libs/spoofing_detection.cc). 
 This solves the issue of multiple antenna-inputs and single output.
 
+## Compiling
+
+The authors of gnss-sdr have de-activated again logging in 0.13 (see https://gnss-sdr.org/gnss-sdr-v0013-released/) so
+compiling gnss-sdr with logging requires enabling the cmake flag ``-DENABLE_LOG=ON``. For compiling gnss-sdr for 
+Raspberry Pi 4 out of a Buildroot environment, use
+```
+cmake -DCMAKE_TOOLCHAIN_FILE=/directory/to/buildroot_RaspberryPi4/output/host/usr/share/buildroot/toolchainfile.cmake -DENABLE_LOG=ON ../
+```
+
+The default CPU policy for Buildroot is powersaving where the Raspberry Pi 4 CPUs run at 600 MHz. Please switch to ``ondemand``
+or ``performance`` to switch the CPU to 1500 MHz speed using
+```
+echo "performance" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+
+```
+
 ## New configuration options
 
 The two sources for which configuration options have been added are File Source and UHD Source
