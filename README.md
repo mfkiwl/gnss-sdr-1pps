@@ -27,8 +27,9 @@ The default CPU policy for Buildroot is powersaving where the Raspberry Pi 4 CPU
 or ``performance`` to switch the CPU to 1500 MHz speed using
 ```
 echo "performance" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
-
 ```
+Also, remember to run ``volk_profile`` on the target computer running gnss-sdr for best performance of VOLK (e.g. using the NEON
+SIMD instructions on ARM).
 
 ## New configuration options
 
@@ -52,7 +53,6 @@ assumption on the disturbing signal structure), a Stochastic Descent Gradient Ap
 been implemented. This is activated with ``SignalSource.sgd=N``, with only ``N=2`` supported
 as well, and is exclusive to ``spoofing_protection`` (either spoofing_protection or sgd,
 but not both).
-
 
 ## Spoofing detection and cancellation
 
