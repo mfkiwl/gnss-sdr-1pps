@@ -41,18 +41,15 @@
 
 // #define CHUNK_SIZE (2048*8*2) // ~1023 MS/s/32768=30~Hz/bin
 #define CHUNK_SIZE (8192*64) // cf Matlab
+#define NORM_THRESHOLD (0.08)
 
 class Gnss_Jamming_Protect;
 #if GNURADIO_USES_STD_POINTERS
 std::shared_ptr<Gnss_Jamming_Protect> gnss_sdr_make_jamm(
-    size_t sizeof_stream_item,
-    Concurrent_Queue<pmt::pmt_t>* queue);
-
+    float threshold, int averages);
 #else
 boost::shared_ptr<Gnss_Jamming_Protect> gnss_sdr_make_jamm(
-    size_t sizeof_stream_item,
-    Concurrent_Queue<pmt::pmt_t>* queue);
-
+    float threshold, int averages);
 #endif
 
 /*!
@@ -69,17 +66,13 @@ public:
 private:
 #if GNURADIO_USES_STD_POINTERS
     friend std::shared_ptr<Gnss_Jamming_Protect> gnss_sdr_make_jamm(
-        size_t sizeof_stream_item,
-        Concurrent_Queue<pmt::pmt_t>* queue);
+           float threshold, int averages);
 #else
     friend boost::shared_ptr<Gnss_Jamming_Protect> gnss_sdr_make_jamm(
-        size_t sizeof_stream_item,
-        Concurrent_Queue<pmt::pmt_t>* queue);
+           float threshold, int averages);
 #endif
 
-    Gnss_Jamming_Protect(size_t sizeof_stream_item,
-        Concurrent_Queue<pmt::pmt_t>* queue);
-
+    Gnss_Jamming_Protect(float threshold, int averages);
     gr::fft::fft_complex* plan = new gr::fft::fft_complex(CHUNK_SIZE, true);
     gr::fft::fft_complex* iplan= new gr::fft::fft_complex(CHUNK_SIZE, false); // forward = false
     gr_complex bufout0[CHUNK_SIZE];
@@ -87,6 +80,8 @@ private:
     gr_complex processed_output[CHUNK_SIZE];
     gr_complex weight_;
     gr_complex weight_avg_;
+    float d_threshold;
+    int d_averages;
     int jamming_memory_;
     int avg_index_;
     uint64_t d_ncopied_items;

@@ -68,6 +68,8 @@ UhdSignalSource::UhdSignalSource(const ConfigurationInterface* configuration,
          {printf("Spoofing protection %d\n",spoofing_protection_);
           RF_channels_=spoofing_protection_; // spoofing protection: override RF_channels in this block only => N inputs and RF_chan=1 output
           subdevice_ = configuration->property(role + ".subdevice", std::string("A:A A:B"));
+          spoofing_averages=configuration->property(role + ".spoofing_averages", Navg);
+          spoofing_threshold=configuration->property(role + ".spoofing_threshold", STD_THRESHOLD);
          }
     if (sgd_ !=0) 
          {printf("SGD jamming protection %d\n",sgd_);
@@ -78,9 +80,12 @@ UhdSignalSource::UhdSignalSource(const ConfigurationInterface* configuration,
          {printf("Inverse filter jamming protection %d\n",sgd_);
           RF_channels_=jamming_; // jamming protection: override RF_channels in this block only => N inputs and RF_chan=1 output
           subdevice_ = configuration->property(role + ".subdevice", std::string("A:A A:B"));
+          jamming_averages=configuration->property(role + ".jamming_averages", Navg);
+          jamming_threshold=configuration->property(role + ".jamming_threshold", NORM_THRESHOLD);
          }
     if ((spoofing_protection_ ==0) && (sgd_ == 0) && (jamming_==0))
-          subdevice_ = configuration->property(role + ".subdevice", empty); 
+         {subdevice_ = configuration->property(role + ".subdevice", empty); 
+         }
     sample_rate_ = configuration->property(role + ".sampling_frequency", 4.0e6);
     item_type_ = configuration->property(role + ".item_type", default_item_type);
 
@@ -239,7 +244,7 @@ UhdSignalSource::UhdSignalSource(const ConfigurationInterface* configuration,
         }
     if (spoofing_protection_ != 0)  // if spoofing_protection is on
         {
-            spoofing_detect_=gnss_sdr_make_spoof(STD_THRESHOLD , Navg); // threshold on phase standard deviation (rad), number of averages
+            spoofing_detect_=gnss_sdr_make_spoof(spoofing_threshold, spoofing_averages); // threshold on phase standard deviation (rad), number of averages
             printf("Spoofing make_block: %d\n",spoofing_protection_);fflush(stdout);
         }
     if (sgd_ != 0)  // if SGD jamming_protection is on
@@ -249,7 +254,7 @@ UhdSignalSource::UhdSignalSource(const ConfigurationInterface* configuration,
         }
     if (jamming_ != 0)  // if jamming_protection is on
         {
-            jamming_xcorr_=gnss_sdr_make_jamm(item_size_, queue);
+            jamming_xcorr_=gnss_sdr_make_jamm(jamming_threshold, jamming_averages);
             printf("Jamming protection make_block: %d\n",jamming_);fflush(stdout);
         }
     if (in_stream_ > 0)

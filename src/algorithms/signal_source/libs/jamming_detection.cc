@@ -1,10 +1,4 @@
 /*!
- * \file gnss_sdr_valve.cc
- * \brief Implementation of a GNU Radio block that sends a STOP message to the
- * control queue right after a specific number of samples have passed through it.
- * \author Javier Arribas, 2018. jarribas(at)cttc.es
- * \author Carlos Aviles, 2010. carlos.avilesr(at)googlemail.com
- *
  *
  * -------------------------------------------------------------------------
  *
@@ -31,16 +25,13 @@
 
 #pragma message("Jamming detection compile")
 
-#define Navg 1  // sliding average
-#define NORM_THRESHOLD (0.08)
 #define MEMORY_LEN 5 // remember jamming even std rises suddendly
 
-Gnss_Jamming_Protect::Gnss_Jamming_Protect(size_t sizeof_stream_item,
-    Concurrent_Queue<pmt::pmt_t>* queue) : gr::sync_block("jamming_detection",
-                               gr::io_signature::make(1, 20, sizeof_stream_item),
-                               gr::io_signature::make(1, 1, sizeof_stream_item)),
-                           d_ncopied_items(0),
-                           d_queue(std::move(queue))
+Gnss_Jamming_Protect::Gnss_Jamming_Protect(float threshold, int averages) : gr::sync_block("jamming_detection",
+                               gr::io_signature::make(1, 20, sizeof(gr_complex)),
+                               gr::io_signature::make(1, 1, sizeof(gr_complex))),
+                           d_threshold(threshold),
+                           d_averages(averages)
 {
     printf("Gnss_Jamming_Protect\n");
 /*
@@ -57,15 +48,15 @@ https://lists.gnu.org/archive/html/discuss-gnuradio/2019-08/msg00188.html
 }
 
 #if GNURADIO_USES_STD_POINTERS
-std::shared_ptr<Gnss_Jamming_Protect> gnss_sdr_make_jamm(size_t sizeof_stream_item, Concurrent_Queue<pmt::pmt_t>* queue)
+std::shared_ptr<Gnss_Jamming_Protect> gnss_sdr_make_jamm(float threshold, int averages)
 {
-    std::shared_ptr<Gnss_Jamming_Protect> jamming_detect_(new Gnss_Jamming_Protect(sizeof_stream_item, std::move(queue)));
+    std::shared_ptr<Gnss_Jamming_Protect> jamming_detect_(new Gnss_Jamming_Protect(threshold, averages));
     return jamming_detect_;
 }
 #else
-boost::shared_ptr<Gnss_Jamming_Protect> gnss_sdr_make_jamm(size_t sizeof_stream_item, Concurrent_Queue<pmt::pmt_t>* queue)
+boost::shared_ptr<Gnss_Jamming_Protect> gnss_sdr_make_jamm(float threshold, int averages)
 {
-    boost::shared_ptr<Gnss_Jamming_Protect> jamming_detection(new Gnss_Jamming_Protect(sizeof_stream_item, std::move(queue)));
+    boost::shared_ptr<Gnss_Jamming_Protect> jamming_detection(new Gnss_Jamming_Protect(threshold, averages));
     printf("Jamming detection: variable created\n");
     return jamming_detection;
 }
@@ -105,19 +96,19 @@ int Gnss_Jamming_Protect::work(int noutput_items,
               avg_index_++;
              }
         }
-    if (avg_index_==Navg)    // restart averaging
+    if (avg_index_==d_averages)    // restart averaging
       {weight_=weight_avg_/(float)avg_index_;
        weight_avg_={0.,0.};
        avg_index_=0;
        printf("xcorr: %f+i*%f -> %f ",weight_.real(),weight_.imag(),norm(weight_));
       }
-      if ((norm(weight_)<NORM_THRESHOLD)&&(jamming_memory_==0)) // no jamming
+      if ((norm(weight_)<d_threshold)&&(jamming_memory_==0)) // no jamming
        {
         memcpy(output_items[0], input_items[0], noutput_items * input_signature()->sizeof_stream_item(ch));
         printf("\n");
        }
     else
-      {if (norm(weight_)>=NORM_THRESHOLD)
+      {if (norm(weight_)>=d_threshold)
           {printf(" /!\\\n");
            jamming_memory_=MEMORY_LEN; // reinit memory
           }

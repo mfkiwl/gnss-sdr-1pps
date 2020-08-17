@@ -109,6 +109,10 @@ private:
     int spoofing_protection_;
     int sgd_;
     int jamming_;
+    int jamming_averages;
+    int spoofing_averages;
+    double jamming_threshold;
+    double spoofing_threshold;
     unsigned int in_stream_;
     unsigned int out_stream_;
 };
