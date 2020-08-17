@@ -187,3 +187,7 @@ Anti-leurrage et anti-brouillage de GPS par réseau d'antennes, MISC 110 (2020) 
 [2] J.-M. Friedt, W. Feng, G. Goavec-Merou, F. Meyer, GPS spoofing implementation by Software Defined 
 Radio and computationally efficient GPS spoofing detection and cancellation (submitted, 2020)
 
+[3] J.-M Friedt, D. Rabus, G. Goavec-Merou, Software defined radio based Global Navigation Satellite 
+System real time spoofing detection and cancellation, GNU Radio Conference 2020 with the video of the
+oral presentation at http://jmfriedt.free.fr/grcon2020_jmfriedt_gps.mp4 and the slides at
+http://jmfriedt.free.fr/grcon2020_gps.pdf
