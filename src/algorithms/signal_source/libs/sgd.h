@@ -35,10 +35,12 @@ class sgd_impl;
 
 #if GNURADIO_USES_STD_POINTERS
 std::shared_ptr<sgd_impl> gnss_sdr_make_sgd(
-    int delay_max, float seuil, float alpha);
+    int delay_max, float seuil, float alpha,
+        bool mean, int mean_length, int iter_count);
 #else
 boost::shared_ptr<sgd_impl> gnss_sdr_make_sgd(
-    int delay_max, float seuil, float alpha);
+    int delay_max, float seuil, float alpha,
+        bool mean, int mean_length, int iter_count);
 #endif
 
     class sgd_impl : public gr::sync_block
@@ -46,10 +48,12 @@ boost::shared_ptr<sgd_impl> gnss_sdr_make_sgd(
      private:
 #if GNURADIO_USES_STD_POINTERS
          friend std::shared_ptr<sgd_impl> gnss_sdr_make_sgd(
-             int delay_max, float seuil, float alpha);
+             int delay_max, float seuil, float alpha,
+                  bool mean, int mean_length, int iter_count);
 #else
          friend boost::shared_ptr<sgd_impl> gnss_sdr_make_sgd(
-             int delay_max, float seuil, float alpha);
+             int delay_max, float seuil, float alpha,
+                  bool mean, int mean_length, int iter_count);
 #endif
 
       int _w1_size;
@@ -67,12 +71,21 @@ boost::shared_ptr<sgd_impl> gnss_sdr_make_sgd(
       float *w1_mag;
       gr_complex *xxConj;
       int _residual;
-	  FILE *_w1_out;
-	  int _iter;
+      FILE *_w1_out;
+      int _iter;
+      std::complex<double> **_w1_array;
+      std::complex<double> *w1_accum;
+      gr_complex *w1_res;
+      int _array_index;
+      int _nb_accum;
+      bool _mean;
+      int _mean_length;
+      int _iter_count;
 
      public:
       sgd_impl();
-      sgd_impl(int w1_size, float seuil, float alpha);
+      sgd_impl(int w1_size, float seuil, float alpha,
+                bool mean, int mean_length, int iter_count);
       ~sgd_impl();
       int fixed_rate_ninput_to_noutput(int ninput);
 
