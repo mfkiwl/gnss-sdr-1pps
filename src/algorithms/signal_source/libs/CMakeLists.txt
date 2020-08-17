@@ -27,6 +27,7 @@ set(SIGNAL_SOURCE_LIB_SOURCES
     gnss_sdr_valve.cc
     sgd_impl.cc
     spoofing_detection.cc
+    jamming_detection.cc
     ${OPT_SIGNAL_SOURCE_LIB_SOURCES}
 )
 
@@ -35,6 +36,7 @@ set(SIGNAL_SOURCE_LIB_HEADERS
     rtl_tcp_dongle_info.h
     gnss_sdr_valve.h
     spoofing_detection
+    jamming_detection
     sgd.h
     ${OPT_SIGNAL_SOURCE_LIB_HEADERS}
 )

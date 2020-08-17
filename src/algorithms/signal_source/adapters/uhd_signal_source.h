@@ -79,11 +79,13 @@ private:
 #if GNURADIO_USES_STD_POINTERS
     std::vector<std::shared_ptr<gr::block>> valve_;
     std::shared_ptr<gr::block> spoofing_detect_;
-    std::shared_ptr<gr::block> spoofing_sgd_;
+    std::shared_ptr<gr::block> jamming_sgd_;
+    std::shared_ptr<gr::block> jamming_xcorr_;
 #else
     std::vector<boost::shared_ptr<gr::block>> valve_;
     boost::shared_ptr<gr::block> spoofing_detect_;
-    boost::shared_ptr<gr::block> spoofing_sgd_;
+    boost::shared_ptr<gr::block> jamming_sgd_;
+    boost::shared_ptr<gr::block> jamming_xcorr_;
 #endif
     std::vector<gr::blocks::file_sink::sptr> file_sink_;
     std::vector<double> freq_;
@@ -106,6 +108,7 @@ private:
     int RF_channels_;
     int spoofing_protection_;
     int sgd_;
+    int jamming_;
     unsigned int in_stream_;
     unsigned int out_stream_;
 };

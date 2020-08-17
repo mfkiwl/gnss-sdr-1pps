@@ -22,6 +22,7 @@
 #include "configuration_interface.h"
 #include "gnss_sdr_valve.h"
 #include "spoofing_detection.h"
+#include "jamming_detection.h"
 #include "sgd.h"
 #include <glog/logging.h>
 #include <uhd/exception.hpp>
@@ -62,6 +63,7 @@ UhdSignalSource::UhdSignalSource(const ConfigurationInterface* configuration,
     RF_channels_ = configuration->property(role + ".RF_channels", 1);
     spoofing_protection_  = configuration->property(role + ".spoofing_protection", 0);
     sgd_  = configuration->property(role + ".sgd", 0);
+    jamming_  = configuration->property(role + ".jamming_protection", 0);
     if (spoofing_protection_ !=0) 
          {printf("Spoofing protection %d\n",spoofing_protection_);
           RF_channels_=spoofing_protection_; // spoofing protection: override RF_channels in this block only => N inputs and RF_chan=1 output
@@ -69,10 +71,15 @@ UhdSignalSource::UhdSignalSource(const ConfigurationInterface* configuration,
          }
     if (sgd_ !=0) 
          {printf("SGD jamming protection %d\n",sgd_);
-          RF_channels_=sgd_; // spoofing protection: override RF_channels in this block only => N inputs and RF_chan=1 output
+          RF_channels_=sgd_; // SGD jamming protection: override RF_channels in this block only => N inputs and RF_chan=1 output
           subdevice_ = configuration->property(role + ".subdevice", std::string("A:A A:B"));
          }
-    if ((spoofing_protection_ ==0) && (sgd_ == 0))
+    if (jamming_ !=0) 
+         {printf("Inverse filter jamming protection %d\n",sgd_);
+          RF_channels_=jamming_; // jamming protection: override RF_channels in this block only => N inputs and RF_chan=1 output
+          subdevice_ = configuration->property(role + ".subdevice", std::string("A:A A:B"));
+         }
+    if ((spoofing_protection_ ==0) && (sgd_ == 0) && (jamming_==0))
           subdevice_ = configuration->property(role + ".subdevice", empty); 
     sample_rate_ = configuration->property(role + ".sampling_frequency", 4.0e6);
     item_type_ = configuration->property(role + ".item_type", default_item_type);
@@ -235,10 +242,15 @@ UhdSignalSource::UhdSignalSource(const ConfigurationInterface* configuration,
             spoofing_detect_=gnss_sdr_make_spoof(item_size_, queue);
             printf("Spoofing make_block: %d\n",spoofing_protection_);fflush(stdout);
         }
-    if (sgd_ != 0)  // if jamming_protection is on
+    if (sgd_ != 0)  // if SGD jamming_protection is on
         {
-            spoofing_sgd_=gnss_sdr_make_sgd(/*item_size_, queue_*/0, 5e-3, 1e-2);
-            printf("JMF make_block: %d\n",sgd_);fflush(stdout);
+            jamming_sgd_  =gnss_sdr_make_sgd(/*item_size_, queue_*/0, 5e-3, 1e-2);
+            printf("SGD make_block: %d\n",sgd_);fflush(stdout);
+        }
+    if (jamming_ != 0)  // if jamming_protection is on
+        {
+            jamming_xcorr_=gnss_sdr_make_jamm(item_size_, queue);
+            printf("Jamming protection make_block: %d\n",jamming_);fflush(stdout);
         }
     if (in_stream_ > 0)
         {
@@ -280,8 +292,12 @@ void UhdSignalSource::connect(gr::top_block_sptr top_block)
                 }
             if (sgd_ != 0)
                 {
-                    top_block->connect(uhd_source_, i, spoofing_sgd_, i);
+                    top_block->connect(uhd_source_, i, jamming_sgd_, i);
                     printf("UHD -> SGD connect: %d\n",i);fflush(stdout);
+                }
+            if (jamming_ != 0)
+                {   top_block->connect(uhd_source_, i, jamming_xcorr_, i);
+                    printf("UHD -> Jamming connect: %d\n",i);fflush(stdout);
                 }
         }
 }
@@ -337,9 +353,13 @@ gr::basic_block_sptr UhdSignalSource::get_right_block(int RF_channel)
         {
             return spoofing_detect_;
         }
-    if ( spoofing_sgd_ != 0ULL)
+    if ( jamming_sgd_ != 0ULL)
         {
-            return spoofing_sgd_;
+            return jamming_sgd_;
+        }
+    if ( jamming_xcorr_ != 0ULL)
+        {
+            return jamming_xcorr_;
         }
     return uhd_source_;
 }

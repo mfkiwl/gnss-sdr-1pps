@@ -100,7 +100,7 @@ int Gnss_Spoofing_Protect::work(int noutput_items,
     float maxval,maxvallim;
     gr_complex weightcpl={0.,0.};
     gr_complex* bufin;
-    int opposite;
+    int opposite=0;
 #ifdef moycpl
     gr_complex stddiv[MAXSAT];
     gr_complex integral;
@@ -155,7 +155,7 @@ if (maxpos!=0) {printf("Spoofing: sync error\n");fflush(stdout);}
               volk_32fc_x2_add_32fc( spoofing_average_mul,            spoofing_average_mul,           bufout_sta,KEEP_SIZE);
               volk_32fc_x2_add_32fc(&spoofing_average_mul[KEEP_SIZE],&spoofing_average_mul[KEEP_SIZE],bufout_sto,KEEP_SIZE);
 
-              volk_32fc_x2_divide_32fc(bufout_sta,bufout0_sta,plan->get_outbuf(),KEEP_SIZE);  // CH1/CH0
+              volk_32fc_x2_divide_32fc(bufout_sta,bufout0_sta,plan->get_outbuf(),KEEP_SIZE);  // CH0/CH1
               volk_32fc_x2_divide_32fc(bufout_sto,bufout0_sto,&plan->get_outbuf()[CHUNK_SIZE-KEEP_SIZE-1],KEEP_SIZE);
 // for (i=0;i<KEEP_SIZE;i++) {bufout_sta[i]=sqrt(bufout_sta[i]); bufout_sto[i]=sqrt(bufout_sto[i]);}
               volk_32fc_x2_add_32fc( spoofing_average_div,            spoofing_average_div,           bufout_sta,KEEP_SIZE);
