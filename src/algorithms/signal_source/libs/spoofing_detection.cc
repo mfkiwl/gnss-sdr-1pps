@@ -1,10 +1,4 @@
 /*!
- * \file gnss_sdr_valve.cc
- * \brief Implementation of a GNU Radio block that sends a STOP message to the
- * control queue right after a specific number of samples have passed through it.
- * \author Javier Arribas, 2018. jarribas(at)cttc.es
- * \author Carlos Aviles, 2010. carlos.avilesr(at)googlemail.com
- *
  *
  * -------------------------------------------------------------------------
  *
@@ -28,24 +22,21 @@
 #include <unistd.h>                 // for usleep
 #include <utility>
 #include <volk/volk.h>
-//#define CHUNK_SIZE (2048*8*2) // ~1023 MS/s/16384=30~Hz/bin
+//#define CHUNK_SIZE (2048*8*2) // ~1023 MS/s/16384=30~Hz/bin moved to .h
 #define KEEPSIZE 600 // 30 Hz/bin * 600 = ~+/-20 kHz
-#define STD_THRESHOLD 0.05 // rad
-#define MAXSAT  20  // too many satellites will start detecting genuine constellation ?
-#define MAXKEEP 7   // too many satellites will start detecting genuine constellation ?
+#define MAXSAT  20   // too many satellites will start detecting genuine constellation ?
+#define MAXKEEP 7    // too many satellites will start detecting genuine constellation ?
 #define MEMORY_LEN 5 // remember spoofing even std rises suddendly
+#define moycpl       // average complex (if active) or average mag/phase (if inactive)
 
 #pragma message("Spoofing detection compile")
 
-#define Navg 1  // FFT averages
-#define moycpl  // average complex (if active) or average mag/phase (if inactive)
 
-Gnss_Spoofing_Protect::Gnss_Spoofing_Protect(size_t sizeof_stream_item,
-    Concurrent_Queue<pmt::pmt_t>* queue) : gr::sync_block("spoofing_detection",
-                               gr::io_signature::make(1, 20, sizeof_stream_item),
-                               gr::io_signature::make(1, 1, sizeof_stream_item)),
-                           d_ncopied_items(0),
-                           d_queue(std::move(queue))
+Gnss_Spoofing_Protect::Gnss_Spoofing_Protect(float threshold, int averages) : gr::sync_block("spoofing_detection",
+                               gr::io_signature::make(1, 20, sizeof(gr_complex)),
+                               gr::io_signature::make(1, 1, sizeof(gr_complex))),
+                           d_threshold(threshold), 
+                           d_averages(averages)
 {
     printf("Gnss_Spoofing_Protect\n");
 /*
@@ -67,17 +58,17 @@ https://lists.gnu.org/archive/html/discuss-gnuradio/2019-08/msg00188.html
 }
 
 #if GNURADIO_USES_STD_POINTERS
-std::shared_ptr<Gnss_Spoofing_Protect> gnss_sdr_make_spoof(size_t sizeof_stream_item, Concurrent_Queue<pmt::pmt_t>* queue)
+std::shared_ptr<Gnss_Spoofing_Protect> gnss_sdr_make_spoof(float threshold, int averages)
 {
 //    unsigned int alignment = volk_get_alignment();
-    std::shared_ptr<Gnss_Spoofing_Protect> spoofing_detect_(new Gnss_Spoofing_Protect(sizeof_stream_item, std::move(queue)));
+    std::shared_ptr<Gnss_Spoofing_Protect> spoofing_detect_(new Gnss_Spoofing_Protect(threshold, averages));
     return spoofing_detect_;
 }
 #else
-boost::shared_ptr<Gnss_Spoofing_Protect> gnss_sdr_make_spoof(size_t sizeof_stream_item, Concurrent_Queue<pmt::pmt_t>* queue)
+boost::shared_ptr<Gnss_Spoofing_Protect> gnss_sdr_make_spoof(float threshold, int averages)
 {
 //    unsigned int alignment = volk_get_alignment();
-    boost::shared_ptr<Gnss_Spoofing_Protect> spoofing_detection(new Gnss_Spoofing_Protect(sizeof_stream_item, std::move(queue)));
+    boost::shared_ptr<Gnss_Spoofing_Protect> spoofing_detection(new Gnss_Spoofing_Protect(threshold, averages));
     printf("Spoofing detection: variable created\n");
 /*
     spoofing_average=(gr_complex*)volk_malloc(sizeof(gr_complex)*KEEP_SIZE*2,alignement); // 2* since sta followed by sto -> must fftshift to put 0 at center
@@ -188,7 +179,7 @@ if (maxpos!=0) {printf("Spoofing: sync error\n");fflush(stdout);}
 	     }
 */
         }
-    if (avg_index_==Navg)    // restart averaging
+    if (avg_index_==d_averages)    // restart averaging
       {//volk_32fc_magnitude_squared_32f(spoofing_mag,spoofing_average,KEEP_SIZE*2);
 // https://www.libvolk.org/doxygen/volk_32fc_index_max_16u.html
 // Finds and returns the index which contains the maximum magnitude for complex points in the given vector
@@ -245,7 +236,7 @@ if (maxpos!=0) {printf("Spoofing: sync error\n");fflush(stdout);}
 #endif
            stdargres_/=(float)(count);
            printf("%d:\tstdargs=%.5f\t",count,stdargres_);fflush(stdout);
-           if (stdargres_<=STD_THRESHOLD) //  spoofing
+           if (stdargres_<=d_threshold) //  spoofing
              {
 // initial phase estimate, from S.Daneshmand, A.Jafarnia-Jahromi, A.Broumandan, and G.Lachapelle, 
 // A low-complexity GPS anti-spoofing method using a multi-antenna array,” vol. 2, pp. 2, 2012.
@@ -301,15 +292,13 @@ if (maxpos!=0) {printf("Spoofing: sync error\n");fflush(stdout);}
        memset(spoofing_average_div,0,sizeof(gr_complex)*KEEP_SIZE*2); // start + stop
        avg_index_=0;
       }
-    // memcpy(output_items[0], input_items[0], noutput_items * input_signature()->sizeof_stream_item(ch));
-    // memcpy(output_items[0], carre, noutput_items * input_signature()->sizeof_stream_item(ch));
-    if ((stdargres_>STD_THRESHOLD)&&(spoofing_memory_==0)) // no spoofing
+    if ((stdargres_>d_threshold)&&(spoofing_memory_==0)) // no spoofing
        {
-        memcpy(output_items[0], input_items[0], noutput_items * input_signature()->sizeof_stream_item(ch));
+        memcpy(output_items[0], input_items[0], noutput_items * sizeof(gr_complex));
         printf("\n");
        }
     else
-      {if (stdargres_<=STD_THRESHOLD)
+      {if (stdargres_<=d_threshold)
           {printf(" /!\\\n");
            spoofing_memory_=MEMORY_LEN; // reinit memory
           }

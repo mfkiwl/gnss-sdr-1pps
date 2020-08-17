@@ -239,12 +239,12 @@ UhdSignalSource::UhdSignalSource(const ConfigurationInterface* configuration,
         }
     if (spoofing_protection_ != 0)  // if spoofing_protection is on
         {
-            spoofing_detect_=gnss_sdr_make_spoof(item_size_, queue);
+            spoofing_detect_=gnss_sdr_make_spoof(STD_THRESHOLD , Navg); // threshold on phase standard deviation (rad), number of averages
             printf("Spoofing make_block: %d\n",spoofing_protection_);fflush(stdout);
         }
     if (sgd_ != 0)  // if SGD jamming_protection is on
         {
-            jamming_sgd_  =gnss_sdr_make_sgd(/*item_size_, queue_*/0, 5e-3, 1e-2);
+            jamming_sgd_  =gnss_sdr_make_sgd(0, 5e-3, 1e-2);
             printf("SGD make_block: %d\n",sgd_);fflush(stdout);
         }
     if (jamming_ != 0)  // if jamming_protection is on

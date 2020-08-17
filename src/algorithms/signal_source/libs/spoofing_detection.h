@@ -42,17 +42,19 @@
 // #define CHUNK_SIZE (2048*8*2) // ~1023 MS/s/32768=30~Hz/bin
 #define CHUNK_SIZE (8192*64) // cf Matlab
 #define KEEP_SIZE   (25000)  // +/-50 kHz
+#define STD_THRESHOLD 0.05 // rad
+#define Navg 1  // FFT averages
 
 class Gnss_Spoofing_Protect;
 #if GNURADIO_USES_STD_POINTERS
 std::shared_ptr<Gnss_Spoofing_Protect> gnss_sdr_make_spoof(
-    size_t sizeof_stream_item,
-    Concurrent_Queue<pmt::pmt_t>* queue);
+    float threshold,
+    int averages);
 
 #else
 boost::shared_ptr<Gnss_Spoofing_Protect> gnss_sdr_make_spoof(
-    size_t sizeof_stream_item,
-    Concurrent_Queue<pmt::pmt_t>* queue);
+    float threshold,
+    int averages);
 
 #endif
 
@@ -70,16 +72,13 @@ public:
 private:
 #if GNURADIO_USES_STD_POINTERS
     friend std::shared_ptr<Gnss_Spoofing_Protect> gnss_sdr_make_spoof(
-        size_t sizeof_stream_item,
-        Concurrent_Queue<pmt::pmt_t>* queue);
+        float threshold, int averages);
 #else
     friend boost::shared_ptr<Gnss_Spoofing_Protect> gnss_sdr_make_spoof(
-        size_t sizeof_stream_item,
-        Concurrent_Queue<pmt::pmt_t>* queue);
+        float threshold, int averages);
 #endif
 
-    Gnss_Spoofing_Protect(size_t sizeof_stream_item,
-        Concurrent_Queue<pmt::pmt_t>* queue);
+    Gnss_Spoofing_Protect(float threshold, int averages);
 
     gr::fft::fft_complex* plan = new gr::fft::fft_complex(CHUNK_SIZE, true);
     gr_complex spoofing_average_mul[KEEP_SIZE*2]; // 2* since sta followed by sto -> must fftshift to put 0 at center
@@ -96,9 +95,9 @@ private:
     int avg_index_;
     int num_file_;
     int spoofing_memory_;
-    uint64_t d_ncopied_items;
+    float d_threshold;
+    int d_averages;
     int first_time_;
-    Concurrent_Queue<pmt::pmt_t>* d_queue;
 };
 
 #endif  // GNSS_SDR_GNSS_SDR_SPOOF_H
