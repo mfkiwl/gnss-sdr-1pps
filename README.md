@@ -17,7 +17,16 @@ This solves the issue of multiple antenna-inputs and single output.
 ## Compiling
 
 The authors of gnss-sdr have de-activated again logging in 0.13 (see https://gnss-sdr.org/gnss-sdr-v0013-released/) so
-compiling gnss-sdr with logging requires enabling the cmake flag ``-DENABLE_LOG=ON``. For compiling gnss-sdr for 
+compiling gnss-sdr with logging requires enabling the cmake flag ``-DENABLE_LOG=ON``. 
+
+Most basic compilation:
+```shell
+cd build
+cmake -DENABLE_LOG=ON ../
+make -j4
+```
+
+For compiling gnss-sdr for 
 Raspberry Pi 4 out of a Buildroot environment, use
 ```
 cmake -DCMAKE_TOOLCHAIN_FILE=/directory/to/buildroot_RaspberryPi4/output/host/usr/share/buildroot/toolchainfile.cmake -DENABLE_LOG=ON ../
@@ -31,7 +40,7 @@ echo "performance" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 Also, remember to run ``volk_profile`` on the target computer running gnss-sdr for best performance of VOLK (e.g. using the NEON
 SIMD instructions on ARM).
 
-## New configuration options
+## Spoofing detection and cancellation
 
 The two sources for which configuration options have been added are File Source and UHD Source
 aimed at the B210 (two coherent input channels).
@@ -54,23 +63,21 @@ been implemented. This is activated with ``SignalSource.sgd=N``, with only ``N=2
 as well, and is exclusive to ``spoofing_protection`` (either spoofing_protection or sgd,
 but not both).
 
-## Spoofing detection and cancellation
+Optional arguments to the Spoofing cancellation block are the phase standard deviation threshold to identify whether
+spoofing is occurring, and the sliding average length. These parameters are tuned from the configuration file with
+```
+SignalSource.spoofing_averages=1
+SignalSource.spoofing_threshold=0.05
+```
 
-Activating the Spoofing Detection flag is achieved by adding the
-``SignalSource.spoofing_protection=2`` flag in the configuration file (the argument
-2 meaning two antennas, which is the only supported value at the moment).
-
-Most basic compilation:
+Running ``gnss-sdr`` for testing spoofing cancellation on a file source is achieved with
 ```shell
-cd build
-cmake ../
-make -j4
 ./src/main/gnss-sdr -c ../File-GNSS-SDR-receiver.conf
 ```
 assuming the ``File-GNSS-SDR-receiver.conf`` has been updated to point to an existing
 pair of files recorded e.g. from a B210 as a spoofing signal was being emitted. The
 File Source format is to provide directory + beginning of the file name and the
-extension '_1.bin' and '_2.bin' will be added when loading the files. In this example,
+extension "_1.bin" and "_2.bin" will be added when loading the files. In this example,
 the files are
 ```shell
 $ ls -l /t/7_m35dBm/
@@ -147,8 +154,11 @@ on the second antenna is needed. The Stochastic Gradient Descent (SGD) has been 
 a computationally efficient way of achieving this result.
 
 Activating the SGD jamming cancellation is achieved with ``SignalSource.sgd=2`` (the argument
-2 meaning two antennas, which is the only supported value at the moment). The SGD algorithm accepts many
-parameters, all of which can be tuned from the configuration file. 
+2 meaning two antennas, which is the only supported value at the moment) for using the SGD algorithm,
+or ``SignalSource.jamming_protection=2`` for activating the Inverse Filtering Method. Both these options
+can only be selected when using the UHD signal source. 
+
+``sgd`` accepts many parameters, all of which can be tuned from the configuration file. 
 * ``SignalSource.sgd_mean=true`` means that the weight calculated from the SGD is subject to a sliding average,
 improving the algorithm stability
 * ``SignalSource.sgd_mean_length=1000`` indicates the sliding average length, a tradeoff between stabilization and
@@ -156,8 +166,14 @@ dynamic response to varying jamming sources
 * ``SignalSource.sgd_iter_count=10000`` indicates how often the weighting is reset. The contribution of the correction
 to the weight decreases as the square root of the iteration number and is periodically reset to fully correct
 the current coefficient value. This variable tells how often the reset occurs.
-* ``SignalSource.sgd_alpha=1.0`` is the weight correction factor. The smaller the value, the slower the convergence, but too
+* ``SignalSource.sgd_alpha=1.0`` is the weight correction factor (learning rate). The smaller the value, the slower the convergence, but too
 high a value will lead to instability of the algorithm.
+
+``jamming_protection`` accepts fewer parameters:
+* ``SignalSource.jamming_threshold`` is the threshold on the magnitude of the weight defining whether jamming is occuring or not. The Inverse
+Filtering weight can be thought of as a correlation factor, except that instead of FFT(antenna1)xCC(FFT(antenna2)) we compute
+FFT(antenna1)/FFT(antenna2) to consider the ratio of the magnitudes instead of the product
+* ``SignalSource.jamming_averages`` is the number of averages accumulated before updating the weight.
 
 As a demonstration of the efficiency, genuine constellation - jamming - rotating the array by 90 degrees
 while jamming - back to original position with jammin - genuine constellation is illustrated in the
