@@ -52,6 +52,8 @@ FileSignalSource::FileSignalSource(const ConfigurationInterface* configuration,
           filename2_ = configuration->property(role + ".filename", default_filename);
           filename_=filename_+"_1.bin";
           filename2_=filename2_+"_2.bin";
+          spoofing_averages=configuration->property(role + ".spoofing_averages", Navg);
+          spoofing_threshold=configuration->property(role + ".spoofing_threshold", STD_THRESHOLD);
           printf("%s %s\n",filename_.c_str(),filename2_.c_str());
          }
     else
@@ -219,7 +221,7 @@ FileSignalSource::FileSignalSource(const ConfigurationInterface* configuration,
     valve_ = gnss_sdr_make_valve(item_size_, samples_, queue);
     if (spoofing_protection_ !=0) 
         {valve2_ = gnss_sdr_make_valve(item_size_, samples_, queue);
-         spoofing_detect_=gnss_sdr_make_spoof(STD_THRESHOLD , Navg);
+         spoofing_detect_=gnss_sdr_make_spoof(spoofind_threshold , spoofing_averages);
         }
     DLOG(INFO) << "valve(" << valve_->unique_id() << ")";
 

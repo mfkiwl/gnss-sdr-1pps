@@ -131,6 +131,8 @@ private:
     uint32_t out_streams_;
 
     int spoofing_protection_;
+    int spoofing_averages;
+    double spoofing_threshold;
 
     bool enable_throttle_control_;
     bool repeat_;
