@@ -29,7 +29,8 @@
 
 #if GNURADIO_USES_STD_POINTERS
 std::shared_ptr<sgd_impl> gnss_sdr_make_sgd(
-    int delay_max, float seuil, float alpha)
+    int delay_max, float seuil, float alpha, bool mean, int mean_length,
+        int iter_count)
 {
 	std::shared_ptr<sgd_impl> sgd_inst(new sgd_impl(delay_max, seuil, alpha, mean, mean_length, iter_count));
 	return sgd_inst;
