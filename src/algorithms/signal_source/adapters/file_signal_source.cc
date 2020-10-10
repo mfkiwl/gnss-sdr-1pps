@@ -221,7 +221,7 @@ FileSignalSource::FileSignalSource(const ConfigurationInterface* configuration,
     valve_ = gnss_sdr_make_valve(item_size_, samples_, queue);
     if (spoofing_protection_ !=0) 
         {valve2_ = gnss_sdr_make_valve(item_size_, samples_, queue);
-         spoofing_detect_=gnss_sdr_make_spoof(spoofind_threshold , spoofing_averages);
+         spoofing_detect_=gnss_sdr_make_spoof(spoofing_threshold , spoofing_averages);
         }
     DLOG(INFO) << "valve(" << valve_->unique_id() << ")";
 
