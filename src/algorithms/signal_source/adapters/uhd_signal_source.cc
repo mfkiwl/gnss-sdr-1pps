@@ -31,7 +31,7 @@
 #include <iostream>
 #include <utility>
 
-#pragma message("JMF compile")
+#pragma message("UHD CRPA compile")
 
 UhdSignalSource::UhdSignalSource(const ConfigurationInterface* configuration,
     const std::string& role, unsigned int in_stream, unsigned int out_stream,
