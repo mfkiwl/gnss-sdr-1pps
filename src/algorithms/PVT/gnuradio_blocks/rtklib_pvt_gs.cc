@@ -115,7 +115,6 @@ namespace bc = boost::integer;
 
 #define DAVID_INIT_OFFSET 0.00000
 #ifdef with_vxi11
-#define INTERNAL
 #include "uhd/convert.hpp"
 #include "uhd/usrp/multi_usrp.hpp"
 #include "uhd/utils/safe_main.hpp"
