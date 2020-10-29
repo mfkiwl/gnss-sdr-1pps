@@ -162,7 +162,8 @@ UhdSignalSource::UhdSignalSource(const ConfigurationInterface* configuration,
         }
 
     // 1.2 Make the UHD source object
-    uhd_source_ = gr::uhd::usrp_source::make(dev_addr, uhd_stream_args_);
+
+    uhd_source_ = gr::uhd::usrp_source::make(dev_addr, uhd_stream_args_, true); // jmfriedt 201026 true added to issue stream (now + 0.1 s)
 
     // Set subdevice specification string for USRP family devices. It is composed of:
     // <motherboard slot name>:<daughterboard frontend name>
@@ -257,6 +258,11 @@ UhdSignalSource::UhdSignalSource(const ConfigurationInterface* configuration,
         {
             LOG(ERROR) << "This implementation only supports one output stream";
         }
+// ajout 201026 : delayed start
+uhd::time_spec_t curr_hw_time = uhd_source_->get_time_last_pps();
+uhd_source_->set_time_next_pps(uhd::time_spec_t(1.0) + curr_hw_time);
+// sleep(1.0)
+uhd_source_->set_start_time(uhd::time_spec_t(2.01) + curr_hw_time);
 }
 
 

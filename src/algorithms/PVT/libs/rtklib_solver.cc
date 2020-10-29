@@ -955,6 +955,7 @@ bool Rtklib_Solver::get_PVT(const std::map<int, Gnss_Synchro> &gnss_observables_
                             // add also the clock offset from gps to galileo (pvt_sol.dtr[2])
                             rx_position_and_time[3] = pvt_sol.dtr[2] + pvt_sol.dtr[0] / SPEED_OF_LIGHT_M_S;
                         }
+printf("\nJMF dtr2=%0.12lf dtr[0]=%0.12lf\n",pvt_sol.dtr[2],pvt_sol.dtr[0]); // JMF 
                     this->set_rx_pos({rx_position_and_time[0], rx_position_and_time[1], rx_position_and_time[2]});  // save ECEF position for the next iteration
 
                     // compute Ground speed and COG

@@ -97,6 +97,7 @@ private:
     std::string role_;
     unsigned int in_streams_;
     unsigned int out_streams_;
+    double PPS_Kp,PPS_Ki;
 };
 
 #endif

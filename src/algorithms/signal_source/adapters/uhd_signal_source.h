@@ -73,9 +73,10 @@ public:
     gr::basic_block_sptr get_left_block() override;
     gr::basic_block_sptr get_right_block() override;
     gr::basic_block_sptr get_right_block(int RF_channel) override;
+    // JMF modif
+    gr::uhd::usrp_source::sptr uhd_source_;
 
 private:
-    gr::uhd::usrp_source::sptr uhd_source_;
 #if GNURADIO_USES_STD_POINTERS
     std::vector<std::shared_ptr<gr::block>> valve_;
     std::shared_ptr<gr::block> spoofing_detect_;

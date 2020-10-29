@@ -66,7 +66,7 @@ using rtklib_pvt_gs_sptr = boost::shared_ptr<rtklib_pvt_gs>;
 
 rtklib_pvt_gs_sptr rtklib_make_pvt_gs(uint32_t nchannels,
     const Pvt_Conf& conf_,
-    const rtk_t& rtk);
+    const rtk_t& rtk,const double PPS_Kp,const double PPS_Ki);
 
 /*!
  * \brief This class implements a block that computes the PVT solution using the RTKLIB integrated library
@@ -127,11 +127,11 @@ public:
 private:
     friend rtklib_pvt_gs_sptr rtklib_make_pvt_gs(uint32_t nchannels,
         const Pvt_Conf& conf_,
-        const rtk_t& rtk);
+        const rtk_t& rtk,const double PPS_Kp,const double PPS_Ki);
 
     rtklib_pvt_gs(uint32_t nchannels,
         const Pvt_Conf& conf_,
-        const rtk_t& rtk);
+        const rtk_t& rtk,const double PPS_Kp,const double PPS_Ki);
 
     void msg_handler_telemetry(const pmt::pmt_t& msg);
 
@@ -267,6 +267,9 @@ private:
     bool d_enable_rx_clock_correction;
     bool d_rtcm_writing_started;
     bool d_rtcm_enabled;
+   
+    double _PPS_Kp;
+    double _PPS_Ki;
 };
 
 #endif  // GNSS_SDR_RTKLIB_PVT_GS_H

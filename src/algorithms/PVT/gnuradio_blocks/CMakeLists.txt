@@ -20,6 +20,11 @@ else()
     add_library(pvt_gr_blocks rtklib_pvt_gs.cc rtklib_pvt_gs.h)
 endif()
 
+# ADD VXI11 LIBRARY (JMF)
+find_library(VXI11 libvxi11.so.1 REQUIRED)
+    target_link_libraries( pvt_gr_blocks PRIVATE ${VXI11})
+# END ADD VXI11 LIBRARY (JMF)
+
 if(${FILESYSTEM_FOUND})
     target_compile_definitions(pvt_gr_blocks PRIVATE -DHAS_STD_FILESYSTEM=1)
     if(${find_experimental})
