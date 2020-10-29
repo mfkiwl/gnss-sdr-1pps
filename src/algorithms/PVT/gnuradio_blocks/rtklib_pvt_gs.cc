@@ -115,6 +115,7 @@ namespace bc = boost::integer;
 
 #define DAVID_INIT_OFFSET 0.00000
 #ifdef with_vxi11
+#define INTERNAL
 #include "uhd/convert.hpp"
 #include "uhd/usrp/multi_usrp.hpp"
 #include "uhd/utils/safe_main.hpp"
@@ -151,11 +152,12 @@ rtklib_pvt_gs_sptr rtklib_make_pvt_gs(uint32_t nchannels,
     const Pvt_Conf& conf_,
     const rtk_t& rtk, 
     const double PPS_Kp,
-    const double PPS_Ki)
+    const double PPS_Ki,
+    bool SMA_internal_source_clock)
 {
     return rtklib_pvt_gs_sptr(new rtklib_pvt_gs(nchannels,
         conf_,
-        rtk,PPS_Kp,PPS_Ki));
+        rtk,PPS_Kp,PPS_Ki,SMA_internal_source_clock));
 }
 
 
@@ -163,7 +165,8 @@ rtklib_pvt_gs::rtklib_pvt_gs(uint32_t nchannels,
     const Pvt_Conf& conf_,
     const rtk_t& rtk,
     const double PPS_Kp,
-    const double PPS_Ki) : gr::sync_block("rtklib_pvt_gs",
+    const double PPS_Ki,
+    bool SMA_internal_source_clock) : gr::sync_block("rtklib_pvt_gs",
                             gr::io_signature::make(nchannels, nchannels, sizeof(Gnss_Synchro)),
                             gr::io_signature::make(0, 0, 0))
 {
@@ -171,6 +174,7 @@ rtklib_pvt_gs::rtklib_pvt_gs(uint32_t nchannels,
 #ifdef with_vxi11
     _PPS_Kp=PPS_Kp;
     _PPS_Ki=PPS_Ki;
+    _SMA_internal_source_clock=SMA_internal_source_clock;
     printf("Kp=%lf Ki=%lf\n",_PPS_Kp,_PPS_Ki);
     printf("vxi11 init\n");
     strncpy (device_ip, "192.168.1.69",25);
@@ -181,6 +185,19 @@ rtklib_pvt_gs::rtklib_pvt_gs(uint32_t nchannels,
     vxi11_send (clink, cmd,strlen(cmd));
     bytes_returned=vxi11_receive (clink, buf, BUF_LEN);
     printf ("%s", buf);
+    if(_SMA_internal_source_clock){
+        sprintf (cmd, "ROSC:SOUR INT");
+        vxi11_send (clink, cmd,strlen(cmd));
+        printf("Internal source clock\n");
+    }
+    else{
+        sprintf (cmd, "ROSC:SOUR EXT");
+        vxi11_send (clink, cmd,strlen(cmd));
+        sprintf (cmd, "ROSC:EXT:FREQ 10MHz");
+        vxi11_send (clink, cmd,strlen(cmd));
+        printf("External source clock\n");
+    }
+
     sprintf(cmd, "FREQ %0.3fHz",FREQU);
     vxi11_send (clink, cmd,strlen(cmd));
     printf(cmd);

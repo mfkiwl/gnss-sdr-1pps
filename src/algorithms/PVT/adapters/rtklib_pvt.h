@@ -98,6 +98,7 @@ private:
     unsigned int in_streams_;
     unsigned int out_streams_;
     double PPS_Kp,PPS_Ki;
+    bool SMA_internal_source_clock;
 };
 
 #endif
