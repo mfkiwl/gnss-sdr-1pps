@@ -4293,7 +4293,7 @@ int rtklib_pvt_gs::work(int noutput_items, gr_vector_const_void_star& input_item
 //			    david_init_offset=david_offset;
                             std::cout << "RX clock offset: " << david_offset << "[s]" << " correction " << FREQU_correction << "[Hz] \n";
 			    FREQU=FREQU-FREQU_correction;  // - car on asservit mesure-consigne au lieu de l'opposer A CORRIGER AVEC consigne-mesure et + ici
-FREQU=10000000.; // annule la correction
+                         // FREQU=10000000.; // annule la correction -> choisir Ki=Kp=0 si on ne veut pas de correction
     			    sprintf(cmd, "FREQ %0.3fHz",FREQU);
 			    //printf(cmd);
 			    printf("FREQ %0.9fHz",FREQU);
