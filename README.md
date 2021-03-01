@@ -1,9 +1,9 @@
 This fork of [gnss-sdr](https://github.com/oscimp/gnss-sdr) aims at 
 providing spoofing detection capability by analyzing the direction of 
 arrival of the signals transmitted from each GPS satellite transmitting 
-in the L1 band. It is assumed that two antennas are connected to the
-two inputs of a dual channel coherent SDR receiver -- tests were completed with
-the Ettus Research B210 -- separated by half a wavelength (10 cm at L1).
+in the L1 band and additionally 1-PPS output. It is assumed that two antennas 
+are connected to the two inputs of a dual channel coherent SDR receiver -- tests 
+were completed with the Ettus Research B210 -- separated by half a wavelength (10 cm at L1).
 
 The original gnss-sdr installation documentation is found in [README.original](README.original).
 
@@ -39,6 +39,26 @@ echo "performance" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 ```
 Also, remember to run ``volk_profile`` on the target computer running gnss-sdr for best performance of VOLK (e.g. using the NEON
 SIMD instructions on ARM).
+
+## Synthesizing a new FPGA bitstream
+
+Generating the 1-PPS output requires that the FPGA is configured with a custom bitstream. The patch
+``b200-pps-uhd_67d783b.patch`` provided in the repository will implement such a functionality. In
+order to synthesize the new bitstream: using ISE 14.7 (for the Spartan 6 FPGA of the B210), run
+
+```
+# clone fpga repository
+git clone https://github.com/EttusResearch/fpga.git
+cd fpga
+# apply PPS support patch
+patch -p1 < /somewhere/gnss-sdr-1pps/ b200-pps-uhd_67d783b.patch 
+# build B210 bitstream (need to have ise in console PATH)
+cd usrp3/top/b200/
+make B210
+```
+with the output of the synthesis found in ``build/usrp_b210_fpga.bin`` to be copied in the ``UHD_IMAGES`` directory,
+most probably ``/usr/share/uhd/images``. Possibly use ``uhd_image_loader`` to force loading the bitstream (which will be
+updated anyway since libuhd will detect the inconsistency between the stored bitstream and the available bitstream).
 
 ## Spoofing detection and cancellation
 
