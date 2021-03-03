@@ -47,7 +47,9 @@ FileSignalSource::FileSignalSource(const ConfigurationInterface* configuration,
     sampling_frequency_ = configuration->property(role + ".sampling_frequency", static_cast<int64_t>(0));
     spoofing_protection_  = configuration->property(role + ".spoofing_protection", 0);
     if (spoofing_protection_ !=0) 
-         {printf("JMF %d -- ",spoofing_protection_);
+         {std::cout
+		<< "spoofing protection: "
+		<< spoofing_protection_ << '\n';
           filename_ = configuration->property(role + ".filename", default_filename);
           filename2_ = configuration->property(role + ".filename", default_filename);
           filename_=filename_+"_1.bin";

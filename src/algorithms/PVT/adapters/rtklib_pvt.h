@@ -97,8 +97,13 @@ private:
     std::string role_;
     unsigned int in_streams_;
     unsigned int out_streams_;
-    double PPS_Kp,PPS_Ki;
+    double PPS_Kp;
+    double PPS_Ki;
     bool SMA_internal_source_clock;
+    double LO_external_frequ;
+    bool PPS_correction;
+    bool PPS_estimator_selected;
+    std::string SMA_IP_address;
 };
 
 #endif

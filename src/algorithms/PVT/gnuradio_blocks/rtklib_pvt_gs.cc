@@ -108,43 +108,25 @@ namespace bc = boost::math;
 namespace bc = boost::integer;
 #endif
 
-#define with_vxi11
+//------------ To access B210 
 
-//#define Kp 15000.
-//#define Ki 5000.
-
-#define DAVID_INIT_OFFSET 0.00000
-#ifdef with_vxi11
 #include "uhd/convert.hpp"
 #include "uhd/usrp/multi_usrp.hpp"
 #include "uhd/utils/safe_main.hpp"
 #include <stdint.h>
 #include <stdlib.h>
 #include <iostream>
+
 static const std::string GPIO_DEFAULT_GPIO       = "FP0";
-
 uhd::usrp::multi_usrp::sptr uhd_source_;
-std::string gpio;
-uint32_t ddr, davidout, ctrl, davidatr_idle, mask;
-double david_init_offset =0.;
-double david_offset=0.;
 
+//-------------R&S SMA 
 #include "vxi11_user.h"
 #pragma message "With VXI11"
-	#define BUF_LEN 1000
-        char device_ip[25];
-        char *device_name = NULL;
-        char cmd[256];
-        char buf[BUF_LEN];
-        int ret;
-        long bytes_returned;
-        VXI11_CLINK *clink;
-	double FREQU=10000000.; //=FREQUHz+FREQUmHZ/1000
-		     //FREQUHz=floor(FREQU);
-		     //FREQUmHz=(FREQU-FREQUHz)*1000;
-	double FREQU_correction;	
-	double david_prev_error=0.0,estimateur,estimateur_prev;
-#endif
+#define BUF_LEN 1000
+//        VXI11_CLINK *d_clink;
+//-------------R&S SMA end
+
 
 
 rtklib_pvt_gs_sptr rtklib_make_pvt_gs(uint32_t nchannels,
@@ -152,11 +134,22 @@ rtklib_pvt_gs_sptr rtklib_make_pvt_gs(uint32_t nchannels,
     const rtk_t& rtk, 
     const double PPS_Kp,
     const double PPS_Ki,
-    bool SMA_internal_source_clock)
+    const bool SMA_internal_source_clock,
+    double LO_external_frequ,
+    const bool PPS_correction,
+    const bool PPS_estimator_selected,
+    const std::string SMA_IP_address)
 {
     return rtklib_pvt_gs_sptr(new rtklib_pvt_gs(nchannels,
         conf_,
-        rtk,PPS_Kp,PPS_Ki,SMA_internal_source_clock));
+        rtk,
+	PPS_Kp,
+	PPS_Ki,
+	SMA_internal_source_clock,
+	LO_external_frequ,
+	PPS_correction,
+	PPS_estimator_selected,
+	SMA_IP_address));
 }
 
 
@@ -165,76 +158,97 @@ rtklib_pvt_gs::rtklib_pvt_gs(uint32_t nchannels,
     const rtk_t& rtk,
     const double PPS_Kp,
     const double PPS_Ki,
-    bool SMA_internal_source_clock) : gr::sync_block("rtklib_pvt_gs",
+    const bool SMA_internal_source_clock,
+    double LO_external_frequ,
+    const bool PPS_correction,
+    const bool PPS_estimator_selected,
+    const std::string SMA_IP_address) : gr::sync_block("rtklib_pvt_gs",
                             gr::io_signature::make(nchannels, nchannels, sizeof(Gnss_Synchro)),
                             gr::io_signature::make(0, 0, 0))
 {
+    char* device_name = NULL;
+    char buf[BUF_LEN];
+    long bytes_returned;
+    char  cmd[256];
+    d_PPS_correction=PPS_correction;
+    if (d_PPS_correction)
+	{
+	    d_PPS_estimator_selected=PPS_estimator_selected;
+	    d_PPS_Kp=PPS_Kp;
+	    d_PPS_Ki=PPS_Ki;
+	    d_LO_external_frequ=LO_external_frequ;
+	    d_SMA_IP_address=SMA_IP_address;
 
-#ifdef with_vxi11
-    _PPS_Kp=PPS_Kp;
-    _PPS_Ki=PPS_Ki;
-    _SMA_internal_source_clock=SMA_internal_source_clock;
-    printf("Kp=%lf Ki=%lf\n",_PPS_Kp,_PPS_Ki);
-    printf("vxi11 init\n");
-    strncpy (device_ip, "192.168.1.69",25);
-    printf(device_ip);
-    printf("\n");
-    vxi11_open_device(&clink, device_ip, device_name);
-    sprintf (cmd, "*IDN?\n");
-    vxi11_send (clink, cmd,strlen(cmd));
-    bytes_returned=vxi11_receive (clink, buf, BUF_LEN);
-    printf ("%s", buf);
-    if(_SMA_internal_source_clock){
-        sprintf (cmd, "ROSC:SOUR INT");
-        vxi11_send (clink, cmd,strlen(cmd));
-        printf("Internal source clock\n");
-    }
-    else{
-        sprintf (cmd, "ROSC:SOUR EXT");
-        vxi11_send (clink, cmd,strlen(cmd));
-        sprintf (cmd, "ROSC:EXT:FREQ 10MHz");
-        vxi11_send (clink, cmd,strlen(cmd));
-        printf("External source clock\n");
-    }
+	    std::cout 
+		<< std::setprecision(9)
+		<< "Kp: " << d_PPS_Kp
+		<< " Ki: " << d_PPS_Ki
+		<< " LO: " << d_LO_external_frequ << "[Hz]" << '\n';
 
-    sprintf(cmd, "FREQ %0.3fHz",FREQU);
-    vxi11_send (clink, cmd,strlen(cmd));
-    printf(cmd);
-    printf("\n");
-    printf("%f",FREQU);
-    printf("\n");
+	    LOG(INFO) << "vxi11 init\n";
+	    std::cout
+		<< "SMA IP address: " 
+		<<  d_SMA_IP_address << '\n';
+
+	    vxi11_open_device(&d_clink, d_SMA_IP_address.c_str(), device_name);
+	    sprintf (cmd, "*IDN?\n");
+	    vxi11_send (d_clink, cmd,strlen(cmd));
+	    bytes_returned=vxi11_receive (d_clink, buf, BUF_LEN);
+	    LOG(INFO) <<  buf ;
+	    if (SMA_internal_source_clock)
+		{
+		    sprintf (cmd, "ROSC:SOUR INT");
+		    vxi11_send (d_clink, cmd,strlen(cmd));
+		    std::cout << "SMA Internal source clock selected\n";
+		}
+	    else
+		{
+		    sprintf (cmd, "ROSC:SOUR EXT");
+		    vxi11_send (d_clink, cmd,strlen(cmd));
+		    sprintf (cmd, "ROSC:EXT:FREQ 10MHz");
+		    vxi11_send (d_clink, cmd,strlen(cmd));
+		    std::cout << "SMA External source clock selected\n";
+		}
+
+	    sprintf(cmd, "FREQ %0.3fHz",d_LO_external_frequ);
+	    vxi11_send (d_clink, cmd,strlen(cmd));
+
+
+
+//uhd not used yet
+
 
     // variables to be set by po
-    std::string args;
-    uint32_t rb;
-
-    gpio=GPIO_DEFAULT_GPIO; // FP0
-
+	    std::string args;
+	    uint32_t rb;
+	    std::string gpio=GPIO_DEFAULT_GPIO; // FP0
+	    uint32_t ddr;
+	    uint32_t ctrl;
+	    uint32_t mask;
     // create a uhd_source_ device
-    std::cout << std::endl;
-    std::cout << boost::format("Creating the uhd_source_ device with: %s...") % args
-              << std::endl;
-    uhd_source_ = uhd::usrp::multi_usrp::make(args);
+	    std::cout << std::endl;
+	    std::cout << boost::format("Creating the uhd_source_ device with: %s...") % args
+        	      << std::endl;
+	    uhd_source_ = uhd::usrp::multi_usrp::make(args);
 
 //uhd_source_
-    std::cout << boost::format("Using Device: %s") % uhd_source_->get_pp_string() << std::endl;
+	    std::cout << boost::format("Using Device: %s") % uhd_source_->get_pp_string() << std::endl;
+	    std::cout << "Using GPIO bank: " << gpio << std::endl;
 
-    std::cout << "Using GPIO bank: " << gpio << std::endl;
-
-    ddr=0xff;
-    ctrl=0x00;
-    mask=0xff;
-    // ecriture config
-    uhd_source_->set_gpio_attr(gpio, "DDR", ddr, mask);   // set data direction register (DDR)
-    uhd_source_->set_gpio_attr(gpio, "CTRL", ctrl, mask); // set control register
-    uhd_source_->set_gpio_attr(gpio, "OUT", 0x00, mask);  // set control register
-    uhd_source_->set_gpio_attr(gpio, "ATR_0X", 0x00, mask); // set ATR registers
-    // relecture pour verifier
-    rb= uhd_source_->get_gpio_attr(gpio, "DDR") & mask;
-    std::cout << "DDR:" << rb << std::endl;
-    rb= uhd_source_->get_gpio_attr(gpio, "CTRL") & mask;
-    std::cout << "CTRL:" << rb << std::endl;
-#endif
+	    ddr=0x00;
+	    ctrl=0x00;
+	    mask=0xff;
+    // writing config
+	    uhd_source_->set_gpio_attr(gpio, "DDR", ddr, mask);   // set data direction register (DDR)
+	    uhd_source_->set_gpio_attr(gpio, "CTRL", ctrl, mask); // set control register
+	    uhd_source_->set_gpio_attr(gpio, "OUT", 0x00, mask);  // set control register
+	    uhd_source_->set_gpio_attr(gpio, "ATR_0X", 0x00, mask); // set ATR registers
+    // reading back
+	    rb= uhd_source_->get_gpio_attr(gpio, "DDR") & mask;
+	    std::cout << "DDR:" << rb << std::endl;
+	    rb= uhd_source_->get_gpio_attr(gpio, "CTRL") & mask;
+	    std::cout << "CTRL:" << rb << std::endl;
+	}
 
     // Send feedback message to observables block with the receiver clock offset
     this->message_port_register_out(pmt::mp("pvt_to_observables"));
@@ -631,6 +645,10 @@ rtklib_pvt_gs::rtklib_pvt_gs(uint32_t nchannels,
 rtklib_pvt_gs::~rtklib_pvt_gs()
 {
     DLOG(INFO) << "PVT block destructor called.";
+    if (d_PPS_correction)
+        {
+            vxi11_close_device(d_clink, d_SMA_IP_address.c_str());
+        }
     if (d_sysv_msqid != -1)
         {
             msgctl(d_sysv_msqid, IPC_RMID, nullptr);
@@ -2179,11 +2197,6 @@ int rtklib_pvt_gs::work(int noutput_items, gr_vector_const_void_star& input_item
                     if (d_internal_pvt_solver->get_PVT(d_gnss_observables_map, false))
                         {
                             const double Rx_clock_offset_s = d_internal_pvt_solver->get_time_offset_s();
-			    #ifdef with_VXI11
-//			    if (david_init_offset==0.) 
-//			      {david_init_offset=d_user_pvt_solver->get_time_offset_s();
-//                             }
-			    #endif
                             if (fabs(Rx_clock_offset_s) * 1000.0 > d_max_obs_block_rx_clock_offset_ms)
                                 {
                                     if (!d_waiting_obs_block_rx_clock_offset_correction_msg)
@@ -2232,9 +2245,6 @@ int rtklib_pvt_gs::work(int noutput_items, gr_vector_const_void_star& input_item
                                             if (current_RX_time_ms % d_output_rate_ms == 0)
                                                 {
                                                     flag_compute_pvt_output = true;
-//						    uint32_t davidoffset=d_internal_pvt_solver->get_time_offset_s();
-//                                                    std::cout.precision(17);
-//                                                    std::cout << "David offset: " << davidoffset << '\n';
                                                 }
                                             flag_pvt_valid = true;
                                         }
@@ -2336,24 +2346,25 @@ int rtklib_pvt_gs::work(int noutput_items, gr_vector_const_void_star& input_item
 						    
                                                     const boost::posix_time::ptime time_first_solution = d_user_pvt_solver->get_position_UTC_time() + d_utc_diff_time;
                                                     std::cout << "First position fix at " << time_first_solution << d_local_time_str;
-						    #ifdef with_vxi11
-						    david_init_offset=d_user_pvt_solver->get_time_offset_s();
-						    //david_init_offset=d_internal_pvt_solver->get_time_offset_s();
-						    david_init_offset-=DAVID_INIT_OFFSET;
-						    david_prev_error=0.;
-						    estimateur=0.;
-						    printf("init offset %lf \n",david_init_offset);
-						    #endif
+						    if(d_PPS_correction)
+						    {
+						        d_pps_init_offset=d_user_pvt_solver->get_time_offset_s();
+						        d_pps_prev_error=0.;
+						        d_estimator=0.;
+						        LOG(INFO) << "init offset: " << d_pps_init_offset << "\n";
+						        d_LO_external_frequ_init=d_LO_external_frequ;
+						    }
                                                 }
                                             else
                                                 {
-						    #ifdef with_vxi11
-						    david_init_offset=d_user_pvt_solver->get_time_offset_s();
-						    //david_init_offset=d_internal_pvt_solver->get_time_offset_s();
-						    david_init_offset-=DAVID_INIT_OFFSET;
-						    david_prev_error=0.;
-						    printf("init offset %lf \n",david_init_offset);
-						    #endif
+						    if(d_PPS_correction)
+						    {
+						        d_pps_init_offset=d_user_pvt_solver->get_time_offset_s();
+						        d_pps_prev_error=0.;
+						        d_estimator=0.;
+						        LOG(INFO) << "init offset: " << d_pps_init_offset << "\n";
+						        d_LO_external_frequ_init=d_LO_external_frequ;
+						    }
                                                     std::cout << "First position fix at " << d_user_pvt_solver->get_position_UTC_time() << " UTC";
                                                 }
                                             std::cout << " is Lat = " << d_user_pvt_solver->get_latitude() << " [deg], Long = " << d_user_pvt_solver->get_longitude()
@@ -4268,39 +4279,49 @@ int rtklib_pvt_gs::work(int noutput_items, gr_vector_const_void_star& input_item
                                 << " [deg], Height = " << d_user_pvt_solver->get_height() << " [m]" << TEXT_RESET << '\n';
 
                             std::cout << std::setprecision(ss);
-			    #ifdef with_vxi11
-			    // david_offset=d_user_pvt_solver->get_time_offset_s();
-			    david_offset=d_internal_pvt_solver->get_time_offset_s();
-                            std::cout << std::setprecision(12); // ajout JMF 201018
-//			    FREQU_correction=((david_offset-david_init_offset)*50000);// 20/10/21 01021_K50000_*
-                            estimateur_prev=estimateur;
-                            estimateur=estimateur*0.9+5.5e-8*(FREQU-10000000.)+0.1*(david_offset-david_init_offset);
-                            printf("\njmfestimateur: %0.12lf %0.12lf\n",david_offset-david_init_offset,estimateur);
-//			    FREQU_correction=(david_offset-david_init_offset)*(_PPS_Kp+_PPS_Ki)-david_prev_error*Kp;//
-			    FREQU_correction=estimateur*(_PPS_Kp+_PPS_Ki)-estimateur_prev*_PPS_Kp;//
-			    if(FREQU_correction>0.074) //max 0.074 Hz
-				{
-				FREQU_correction=0.074;
-				std::cout << "sat\n";
-				}
-			    if(FREQU_correction<-0.074) //max 0.074 Hz
-				{
-				FREQU_correction=-0.074;
-				std::cout << "SAT\n";
-				}
-//			    FREQU_correction=10000*((david_offset-david_init_offset)-david_prev_error)+((david_offset-david_init_offset)*10000);//1us donne 10 mHz  //   20/10/20
-			    david_prev_error=david_offset-david_init_offset;
-//			    david_init_offset=david_offset;
-                            std::cout << "RX clock offset: " << david_offset << "[s]" << " correction " << FREQU_correction << "[Hz] \n";
-			    FREQU=FREQU-FREQU_correction;  // - car on asservit mesure-consigne au lieu de l'opposer A CORRIGER AVEC consigne-mesure et + ici
-                         // FREQU=10000000.; // annule la correction -> choisir Ki=Kp=0 si on ne veut pas de correction
-    			    sprintf(cmd, "FREQ %0.3fHz",FREQU);
-			    //printf(cmd);
-			    printf("FREQ %0.9fHz",FREQU);
-			    printf("\n");
-			    vxi11_send (clink, cmd,strlen(cmd));
-			    #endif
+			    if (d_PPS_correction)
+			        {
+				    if (d_PPS_estimator_selected)
+				        {
+                            		    d_estimator_prev=d_estimator;
+			    		    d_pps_offset=d_internal_pvt_solver->get_time_offset_s();
+                            		    d_estimator=d_estimator*0.9+5.5e-8*(d_LO_external_frequ-d_LO_external_frequ_init)+0.1*(d_pps_offset-d_pps_init_offset);
+			    		    d_FREQU_correction=d_estimator*(d_PPS_Kp+d_PPS_Ki)-d_estimator_prev*d_PPS_Kp;
+					}
+				    else
+					{
+			    		    d_pps_prev_error=d_pps_offset-d_pps_init_offset;
+			    		    d_pps_offset=d_internal_pvt_solver->get_time_offset_s();
+			    		    d_FREQU_correction=(d_pps_offset-d_pps_init_offset)*(d_PPS_Kp+d_PPS_Ki)-d_pps_prev_error*d_PPS_Kp;
+					}
+				    if (d_FREQU_correction>0.074) //max 0.074 Hz
+					{
+					    d_FREQU_correction=0.074;
+					    std::cout << "sat\n";
+					}
+			    	    if (d_FREQU_correction<-0.074) //max 0.074 Hz
+					{
+					    d_FREQU_correction=-0.074;
+					    std::cout << "SAT\n";
+					}
+		    		    std::cout
+					<< "Estimator selected: " << std::boolalpha << d_PPS_estimator_selected  << " value: " <<  d_estimator << '\n';
+			    		    std::cout
+					<< std::fixed << std::setprecision(12)
+                               		<< "RX clock offset: " << d_pps_offset << " [s] " 
+					<< "diff offset: " << d_pps_offset-d_pps_init_offset << " [s] " 
+					<< "Frequ correction: " << d_FREQU_correction << " [Hz]" << '\n';
 
+                            	    char cmd[256];
+			    	    d_LO_external_frequ=d_LO_external_frequ-d_FREQU_correction; 
+
+				    std::cout
+					<< std::fixed << std::setprecision(3)
+					<< "LO Frequency: " << d_LO_external_frequ << " [Hz]" << '\n';
+
+    			    	    sprintf(cmd, "FREQ %0.3fHz",d_LO_external_frequ);
+			    	    vxi11_send (d_clink, cmd,strlen(cmd));
+			        }
                             std::cout
                                 << TEXT_BOLD_GREEN
                                 << "Velocity: " << std::fixed << std::setprecision(3)

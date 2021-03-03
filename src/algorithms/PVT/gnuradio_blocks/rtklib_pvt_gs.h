@@ -41,6 +41,8 @@
 #include <boost/shared_ptr.hpp>
 #endif
 
+#include "vxi11_user.h"
+
 class Beidou_Dnav_Almanac;
 class Beidou_Dnav_Ephemeris;
 class Galileo_Almanac;
@@ -66,7 +68,14 @@ using rtklib_pvt_gs_sptr = boost::shared_ptr<rtklib_pvt_gs>;
 
 rtklib_pvt_gs_sptr rtklib_make_pvt_gs(uint32_t nchannels,
     const Pvt_Conf& conf_,
-    const rtk_t& rtk,const double PPS_Kp,const double PPS_Ki, bool SMA_internal_source_clock);
+    const rtk_t& rtk,
+    const double PPS_Kp,
+    const double PPS_Ki, 
+    const bool SMA_internal_source_clock, 
+    double LO_external_frequ,
+    const bool PPS_correction,
+    const bool PPS_estimator_selected,
+    const std::string SMA_IP_address);
 
 /*!
  * \brief This class implements a block that computes the PVT solution using the RTKLIB integrated library
@@ -127,11 +136,26 @@ public:
 private:
     friend rtklib_pvt_gs_sptr rtklib_make_pvt_gs(uint32_t nchannels,
         const Pvt_Conf& conf_,
-        const rtk_t& rtk,const double PPS_Kp,const double PPS_Ki,bool SMA_internal_source_clock);
+        const rtk_t& rtk,
+	const double PPS_Kp,
+	const double PPS_Ki,
+	const bool SMA_internal_source_clock,
+	double LO_external_frequ,
+	const bool PPS_correction,
+	const bool PPS_estimator_selected,
+	const std::string SMA_IP_address);
 
     rtklib_pvt_gs(uint32_t nchannels,
         const Pvt_Conf& conf_,
-        const rtk_t& rtk,const double PPS_Kp,const double PPS_Ki,bool SMA_internal_source_clock);
+        const rtk_t& rtk,
+	const double PPS_Kp,
+	const double PPS_Ki,
+	const bool SMA_internal_source_clock,
+	double LO_external_frequ,
+	const bool PPS_correction,
+	const bool PPS_estimator_selected,
+	const std::string SMA_IP_address);
+
 
     void msg_handler_telemetry(const pmt::pmt_t& msg);
 
@@ -267,10 +291,26 @@ private:
     bool d_enable_rx_clock_correction;
     bool d_rtcm_writing_started;
     bool d_rtcm_enabled;
-   
-    double _PPS_Kp;
-    double _PPS_Ki;
-    bool _SMA_internal_source_clock;
+  
+    bool d_PPS_correction; 
+    bool d_PPS_estimator_selected;
+    double d_PPS_Kp;
+    double d_PPS_Ki;
+    double d_LO_external_frequ;
+    double d_LO_external_frequ_init;
+
+    std::string d_SMA_IP_address;
+    VXI11_CLINK *d_clink;
+
+
+//-------------1PPS variables 
+
+    double d_FREQU_correction;
+    double d_pps_prev_error;
+    double d_estimator;
+    double d_estimator_prev;
+    double d_pps_init_offset;
+    double d_pps_offset;
 };
 
 #endif  // GNSS_SDR_RTKLIB_PVT_GS_H

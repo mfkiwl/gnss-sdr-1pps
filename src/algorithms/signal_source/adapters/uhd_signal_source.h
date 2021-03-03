@@ -73,7 +73,7 @@ public:
     gr::basic_block_sptr get_left_block() override;
     gr::basic_block_sptr get_right_block() override;
     gr::basic_block_sptr get_right_block(int RF_channel) override;
-    // JMF modif
+
     gr::uhd::usrp_source::sptr uhd_source_;
 
 private:
