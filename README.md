@@ -70,6 +70,11 @@ The feedback loop control assumes and external frequency synthesizer feeds the B
 a 10-MHz tunable output: at the moment only the Rohde & Schwarz SMA100A Signal Generator
 (and others compatible) is supported, tuned to an output power of -6 dBm.
 
+<img src="setup.png">
+
+In the above chart, the red parts are for qualification purpose. The reference 1-PPS is derived from the
+Hydrogen maser 10-MHz output feeding a custom, discrete TTL chips, counter.
+
 ## Spoofing detection and cancellation
 
 The two sources for which configuration options have been added are File Source and UHD Source
