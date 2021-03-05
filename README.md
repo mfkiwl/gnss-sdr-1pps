@@ -66,7 +66,7 @@ Following this update, the 1-PPS output is generated on the following GPIO:
 
 <img src="B210_Board_annotated.jpg">
 
-The feedback loop control assumes and external frequency synthesizer feeds the B210 with
+The feedback loop control assumes an external frequency synthesizer feeds the B210 with
 a 10-MHz tunable output: at the moment only the Rohde & Schwarz SMA100A Signal Generator
 (and others compatible) is supported, tuned to an output power of -6 dBm.
 
