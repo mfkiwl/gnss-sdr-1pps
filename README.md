@@ -75,6 +75,20 @@ a 10-MHz tunable output: at the moment only the Rohde & Schwarz SMA100A Signal G
 In the above chart, the red parts are for qualification purpose. The reference 1-PPS is derived from the
 Hydrogen maser 10-MHz output feeding a custom, discrete TTL chips, counter.
 
+## 1-PPS configuration
+
+New configuration options have been implemented in the PVT processing module in charge of assessing the time offset between the local copy of the PRN codes and the received signal and controlling accordingly the B210 external clock source. These options are
+```
+PVT.PPS_correction=true
+PVT.PPS_estimator_selected=false
+PVT.PPS_Kp=15000
+PVT.PPS_Ki=5000
+PVT.LO_external_frequ=10000000
+PVT.IP_SMA_address=192.168.1.69
+PVT.SMA_internal_source_clock=true; default:true: Internal 10 MHz , false: External 10 MHz
+```
+with ``PPS_correction`` activating the output control (otherwise the 1-PPS is free running in the FPGA), ``PPS_estimator`` the use of an estimator prior to the PI control loop, ``PPS_Kp`` and ``PPS_Ki`` respectively the proportional and integral coefficient of the PI loop. Additionnally, ``LO_external_freq`` is the initial frequency setting of the Rohde & Schwarz SMA100A whose IP address is defined with ``IP_SMA_address``. Finally, the clock source of the SMA100A is defined with ``SMA_internal_source_clock`` with false being the external source, in our case a hydrogen maser output used as reference signal.
+
 ## Spoofing detection and cancellation
 
 The two sources for which configuration options have been added are File Source and UHD Source
